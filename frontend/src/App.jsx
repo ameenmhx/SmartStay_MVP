@@ -44,8 +44,8 @@ import {
   Download,
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8000';
-const WS_URL = 'ws://localhost:8000/ws/waiter';
+const API_BASE_URL = 'https://smartstay-backend-3wbb.onrender.com';
+const WS_URL = 'wss://smartstay-backend-3wbb.onrender.com/ws/waiter';
 
 // Status Normalizer helper
 const normalizeStatus = (statusStr) => {
