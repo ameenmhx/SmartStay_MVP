@@ -22,6 +22,8 @@ export default {
         }
       },
       fontFamily: {
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        cinzel: ['"Cinzel"', 'serif'],
         sans: ['Inter', 'Outfit', 'sans-serif'],
       },
       animation: {

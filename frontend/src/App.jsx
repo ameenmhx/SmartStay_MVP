@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import {
   ConciergeBell,
   Droplets,
@@ -42,6 +43,8 @@ import {
   QrCode,
   Printer,
   Download,
+  Grid,
+  Crown,
 } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
@@ -100,37 +103,37 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3.5 shadow-2xl">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 flex items-center justify-center shadow-lg shadow-indigo-500/30 ring-1 ring-white/20">
-              <Building2 className="w-5 h-5 text-white" />
+      <header className="sticky top-0 z-50 glass-panel border-b border-slate-800 px-6 lg:px-10 py-4 shadow-2xl bg-slate-950/90 backdrop-blur-2xl">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/20 ring-1 ring-amber-300/40">
+              <Crown className="w-6 h-6 text-slate-950" />
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-indigo-200">
+              <div className="flex items-center space-x-2.5">
+                <span className="font-serif font-bold text-xl tracking-tight text-white">
                   SmartStay
                 </span>
-                <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  Luxury Suites
+                <span className="px-2.5 py-0.5 text-[10px] font-bold tracking-widest uppercase rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                  5-Star Luxury Resort
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium">Real-Time Hospitality Platform</p>
+              <p className="text-xs text-slate-400 font-medium">In-Suite Hospitality Telemetry</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
             {/* View Switcher Toggle - 3 Views: Guest, Waiter, Manager */}
-            <div className="flex items-center p-1 bg-slate-900/90 rounded-xl border border-slate-800 shadow-inner overflow-x-auto">
+            <div className="flex items-center p-1.5 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner overflow-x-auto">
               <button
                 id="nav-guest-view-btn"
                 onClick={() => setActiveView('guest')}
-                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeView === 'guest'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
                 <ConciergeBell className="w-4 h-4" />
@@ -139,10 +142,10 @@ export default function App() {
               <button
                 id="nav-waiter-view-btn"
                 onClick={() => setActiveView('waiter')}
-                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeView === 'waiter'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
                 <UtensilsCrossed className="w-4 h-4" />
@@ -151,10 +154,10 @@ export default function App() {
               <button
                 id="nav-manager-view-btn"
                 onClick={() => setActiveView('manager')}
-                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeView === 'manager'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
                 <BarChart3 className="w-4 h-4" />
@@ -167,7 +170,7 @@ export default function App() {
               <button
                 id="nav-logout-btn"
                 onClick={handleLogout}
-                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all duration-200 shrink-0"
+                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all duration-200 shrink-0 cursor-pointer"
                 title={`Logged in as ${session.user?.email || 'Staff'}`}
               >
                 <LogOut className="w-4 h-4" />
@@ -179,7 +182,7 @@ export default function App() {
       </header>
 
       {/* Main Container View */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 lg:p-10">
         {activeView === 'guest' ? (
           <GuestView roomFromUrl={roomFromUrl} />
         ) : !session ? (
@@ -196,14 +199,14 @@ export default function App() {
         )}
       </main>
 
-      {/* Modern Footer */}
-      <footer className="border-t border-slate-800/60 py-4 px-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>SmartStay MVP Platform &copy; {new Date().getFullYear()}</span>
+      {/* Modern Luxury Footer */}
+      <footer className="border-t border-slate-800/80 py-6 px-8 text-center text-xs text-slate-500 bg-slate-950">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="font-medium">SmartStay Luxury Resort MVP Platform &copy; {new Date().getFullYear()}</span>
           <div className="flex items-center space-x-4">
-            <span className="inline-flex items-center text-slate-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
-              API Online: {API_BASE_URL}
+            <span className="inline-flex items-center text-slate-400 font-mono text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+              Live Telemetry Engine Active
             </span>
           </div>
         </div>
@@ -213,7 +216,7 @@ export default function App() {
 }
 
 /* ==========================================================================
-   GUEST VIEW COMPONENT
+   GUEST VIEW COMPONENT (5-STAR LUXURY RESORT STYLING)
    ========================================================================== */
 function GuestView({ roomFromUrl }) {
   const selectedRoom = roomFromUrl ? roomFromUrl.trim() : '';
@@ -238,37 +241,37 @@ function GuestView({ roomFromUrl }) {
     if (hour >= 5 && hour < 12) {
       return {
         greeting: 'Good Morning',
-        subtext: 'Start your morning with fresh coffee, warm breakfast, or fresh room amenities.',
+        subtext: 'Start your morning with fresh artisan coffee, warm gourmet bakery, or fresh room amenities.',
         icon: Sunrise,
-        badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+        badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
         suggestions: [
-          { id: 'Coffee', title: 'Fresh Coffee', desc: 'Espresso or Americano', icon: Coffee, badge: 'Morning Drink' },
-          { id: 'Food', title: 'Breakfast Croissant', desc: 'Warm flaky bakery set', icon: UtensilsCrossed, badge: 'Breakfast' },
-          { id: 'Towels', title: 'Fresh Towels', desc: 'Plush morning bath towels', icon: Bath, badge: 'Freshness' },
+          { id: 'Coffee', title: 'Fresh Artisan Coffee', desc: 'Espresso or Americano set', icon: Coffee, badge: 'Morning Brew' },
+          { id: 'Food', title: 'Breakfast Croissant', desc: 'Warm flaky French bakery basket', icon: UtensilsCrossed, badge: 'Gourmet' },
+          { id: 'Towels', title: 'Plush Bath Towels', desc: 'Egyptian cotton bath towels', icon: Bath, badge: 'Fresh Linen' },
         ],
       };
     } else if (hour >= 12 && hour < 17) {
       return {
         greeting: 'Good Afternoon',
-        subtext: 'Stay refreshed with afternoon beverages, lunch, or city shuttle booking.',
+        subtext: 'Stay refreshed with afternoon beverages, chef-prepared lunch, or private chauffeur shuttle.',
         icon: Sun,
-        badgeColor: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+        badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
         suggestions: [
-          { id: 'Water', title: 'Chilled Bottled Water', desc: 'Ice-cold mineral water', icon: Droplets, badge: 'Hydration' },
-          { id: 'Food', title: 'In-Room Lunch', desc: 'Chef gourmet warm lunch', icon: UtensilsCrossed, badge: 'Dining' },
-          { id: 'Taxi', title: 'Taxi Shuttle', desc: 'Book city transportation', icon: Car, badge: 'Travel' },
+          { id: 'Water', title: 'Chilled Mineral Water', desc: 'Ice-cold sparkling or still water', icon: Droplets, badge: 'Hydration' },
+          { id: 'Food', title: 'In-Suite Gourmet Lunch', desc: 'Chef specialty warm entree', icon: UtensilsCrossed, badge: 'Fine Dining' },
+          { id: 'Taxi', title: 'Private Chauffeur', desc: 'Book resort shuttle transportation', icon: Car, badge: 'Travel' },
         ],
       };
     } else {
       return {
         greeting: 'Good Evening',
-        subtext: 'Unwind your evening with cozy blankets, nighttime teas, or turndown service.',
+        subtext: 'Unwind your evening with cozy plush duvets, soothing herbal teas, or turndown refresh service.',
         icon: Moon,
-        badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+        badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
         suggestions: [
-          { id: 'Extra Blankets', title: 'Extra Blankets', desc: 'Warm plush duvet & pillow', icon: Sparkles, badge: 'Night Comfort' },
-          { id: 'Tea', title: 'Hot Herbal Tea', desc: 'Soothing chamomile tea', icon: Coffee, badge: 'Nightcap' },
-          { id: 'Room Cleaning', title: 'Turndown Refresh', desc: 'Evening bed refresh & cleaning', icon: Sparkles, badge: 'Turndown' },
+          { id: 'Extra Blankets', title: 'Extra Blanket Set', desc: 'Plush velvet duvet & feather pillows', icon: Sparkles, badge: 'Night Comfort' },
+          { id: 'Tea', title: 'Organic Chamomile Tea', desc: 'Soothing bedtime herbal infusion', icon: Coffee, badge: 'Nightcap' },
+          { id: 'Room Cleaning', title: 'Evening Turndown', desc: 'Bed refresh & room cleaning', icon: Sparkles, badge: 'Turndown' },
         ],
       };
     }
@@ -302,7 +305,7 @@ function GuestView({ roomFromUrl }) {
 
       recognition.onstart = () => {
         setIsListening(true);
-        triggerToast('🎙️ Listening... Speak your request now.', 'success');
+        triggerToast('🎙️ Listening... Speak your request clearly now.', 'success');
       };
 
       recognition.onresult = (event) => {
@@ -338,39 +341,36 @@ function GuestView({ roomFromUrl }) {
   const serviceCategories = [
     {
       id: 'room_service',
-      title: 'Room Service',
-      description: 'Refreshments, beverages & in-room dining',
+      title: 'In-Suite Dining & Bar',
+      description: 'Gourmet dining, refreshments & beverages delivered to your room',
       icon: UtensilsCrossed,
-      color: 'indigo',
       items: [
-        { id: 'Water', title: 'Bottled Water', desc: 'Chilled mineral water', icon: Droplets, badge: 'Hydration' },
-        { id: 'Tea', title: 'Hot Tea', desc: 'Selection of premium teas', icon: Coffee, badge: 'Beverage' },
-        { id: 'Coffee', title: 'Fresh Coffee', desc: 'Espresso or Americano', icon: Coffee, badge: 'Beverage' },
-        { id: 'Food', title: 'In-Room Dining', desc: 'Chef snacks & warm meal', icon: UtensilsCrossed, badge: 'Dining' },
+        { id: 'Water', title: 'Bottled Mineral Water', desc: 'Ice-cold premium mineral water', icon: Droplets, badge: 'Hydration' },
+        { id: 'Tea', title: 'Artisan Hot Tea', desc: 'Selection of organic teas', icon: Coffee, badge: 'Beverage' },
+        { id: 'Coffee', title: 'Fresh Espresso', desc: 'Double espresso or Americano', icon: Coffee, badge: 'Beverage' },
+        { id: 'Food', title: 'Gourmet In-Room Meal', desc: 'Chef-crafted warm culinary dishes', icon: UtensilsCrossed, badge: 'Fine Dining' },
       ],
     },
     {
       id: 'housekeeping',
-      title: 'Housekeeping',
-      description: 'Room care, linen & cleaning services',
+      title: 'Housekeeping & Comfort',
+      description: 'Linen refresh, turndown service & luxury amenities',
       icon: Sparkles,
-      color: 'cyan',
       items: [
-        { id: 'Room Cleaning', title: 'Room Cleaning', desc: 'Full room refresh', icon: Sparkles, badge: 'Service' },
-        { id: 'Towels', title: 'Fresh Towels', desc: 'Set of plush bath towels', icon: Bath, badge: 'Amenities' },
-        { id: 'Laundry', title: 'Laundry Service', desc: 'Wash, dry & press', icon: Shirt, badge: 'Care' },
+        { id: 'Room Cleaning', title: 'Full Suite Refresh', desc: 'Thorough room cleaning & refresh', icon: Sparkles, badge: 'Service' },
+        { id: 'Towels', title: 'Fresh Plush Towels', desc: 'Set of Egyptian cotton bath towels', icon: Bath, badge: 'Amenities' },
+        { id: 'Laundry', title: 'Express Laundry', desc: 'Wash, press & garment care', icon: Shirt, badge: 'Garment Care' },
       ],
     },
     {
       id: 'reception',
-      title: 'Reception',
-      description: 'Front desk, transportation & checkout',
+      title: 'Concierge & Transport',
+      description: 'Front desk, transport booking & express bill settlement',
       icon: ConciergeBell,
-      color: 'emerald',
       items: [
-        { id: 'Taxi', title: 'Taxi Booking', desc: 'Airport or city shuttle', icon: Car, badge: 'Travel' },
-        { id: 'Wake-up Call', title: 'Wake-up Call', desc: 'Scheduled morning alarm', icon: Clock, badge: 'Front Desk' },
-        { id: 'Checkout', title: 'Express Checkout', desc: 'Bag handling & bill review', icon: LogOut, badge: 'Billing' },
+        { id: 'Taxi', title: 'Private Chauffeur', desc: 'Airport or city shuttle booking', icon: Car, badge: 'Transport' },
+        { id: 'Wake-up Call', title: 'Personalized Alarm Call', desc: 'Scheduled morning concierge call', icon: Clock, badge: 'Front Desk' },
+        { id: 'Checkout', title: 'Express Suite Checkout', desc: 'Luggage assistance & billing', icon: LogOut, badge: 'Checkout' },
       ],
     },
   ];
@@ -415,7 +415,6 @@ function GuestView({ roomFromUrl }) {
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-        console.log('Guest WS event received:', payload);
 
         if (payload.event === 'NEW_SERVICE_REQUEST' && payload.data) {
           const req = payload.data;
@@ -482,15 +481,15 @@ function GuestView({ roomFromUrl }) {
       ]);
 
       if (isEmergency) {
-        triggerToast(`🚨 EMERGENCY SOS DISPATCHED for Room ${selectedRoom}! Waiter & Manager notified.`, 'error');
+        triggerToast(`🚨 EMERGENCY SOS DISPATCHED for ${selectedRoom}! Resort staff notified instantly.`, 'error');
       } else {
-        triggerToast(`Request for "${itemName}" sent to front desk staff!`, 'success');
+        triggerToast(`Request for "${itemName}" sent to resort staff!`, 'success');
       }
 
       if (itemName === customItem) setCustomItem('');
     } catch (err) {
       console.error('Request failed:', err);
-      triggerToast(`Failed to send request: ${err.message}. Ensure backend is running.`, 'error');
+      triggerToast(`Failed to send request: ${err.message}.`, 'error');
     } finally {
       setLoadingItem(null);
     }
@@ -498,20 +497,23 @@ function GuestView({ roomFromUrl }) {
 
   if (!hasRoomParam) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 sm:p-12 glass-panel rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900/90 via-slate-900/60 to-indigo-950/40 shadow-2xl space-y-6 max-w-2xl mx-auto my-12 animate-fade-in">
-        <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-xl shadow-indigo-500/10 ring-1 ring-white/10">
-          <QrCode className="w-10 h-10 animate-pulse" />
+      <div className="min-h-[65vh] flex flex-col items-center justify-center text-center p-10 sm:p-16 glass-panel rounded-3xl border border-slate-800 bg-slate-950/90 shadow-2xl space-y-8 max-w-2xl mx-auto my-12 animate-fade-in">
+        <div className="w-24 h-24 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-2xl shadow-amber-500/20 ring-1 ring-amber-400/30">
+          <QrCode className="w-12 h-12 animate-pulse text-amber-400" />
         </div>
-        <div className="space-y-3">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Welcome to SmartStay!
+        <div className="space-y-4">
+          <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-amber-500/10 text-amber-400 border border-amber-500/30">
+            Welcome to SmartStay
+          </span>
+          <h1 className="text-3xl sm:text-5xl font-serif text-white tracking-tight leading-tight">
+            5-Star Resort Guest Experience
           </h1>
-          <p className="text-base sm:text-lg text-slate-300 max-w-md mx-auto leading-relaxed">
-            Please scan the QR code in your room to access services.
+          <p className="text-sm sm:text-base text-slate-400 max-w-md mx-auto leading-relaxed">
+            Please scan the QR code located on your suite table tent to access your personalized in-room concierge portal.
           </p>
         </div>
-        <div className="pt-4 flex items-center justify-center space-x-2 text-xs text-slate-500 font-medium">
-          <Building2 className="w-4 h-4 text-indigo-400" />
+        <div className="pt-4 flex items-center justify-center space-x-2 text-xs text-slate-500 font-bold uppercase tracking-widest">
+          <Crown className="w-4 h-4 text-amber-400" />
           <span>Luxury Suites Hospitality Platform</span>
         </div>
       </div>
@@ -519,14 +521,14 @@ function GuestView({ roomFromUrl }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+    <div className="max-w-5xl mx-auto space-y-10 animate-fade-in">
       {/* Toast Notification Banner */}
       {toast && (
         <div
-          className={`p-4 rounded-xl border flex items-center space-x-3 shadow-2xl backdrop-blur-md transition-all transform animate-slide-up ${
+          className={`p-5 rounded-2xl border flex items-center space-x-4 shadow-2xl backdrop-blur-xl transition-all transform animate-slide-up ${
             toast.type === 'error'
-              ? 'bg-red-950/90 border-red-500/50 text-red-200 shadow-red-900/20'
-              : 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200 shadow-emerald-900/20'
+              ? 'bg-red-950/95 border-red-500/60 text-red-100 shadow-red-950/40'
+              : 'bg-emerald-950/95 border-emerald-500/60 text-emerald-100 shadow-emerald-950/40'
           }`}
         >
           {toast.type === 'error' ? (
@@ -534,81 +536,84 @@ function GuestView({ roomFromUrl }) {
           ) : (
             <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
           )}
-          <div className="text-xs sm:text-sm font-semibold">{toast.msg}</div>
+          <div className="text-xs sm:text-sm font-semibold leading-relaxed">{toast.msg}</div>
         </div>
       )}
 
       {/* Time-Aware UI: Dynamic Greeting Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl relative overflow-hidden shadow-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/90 to-indigo-950/40">
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center space-x-2">
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border flex items-center space-x-1 ${timeContext.badgeColor}`}>
+      <div className="glass-panel p-8 sm:p-10 rounded-3xl relative overflow-hidden shadow-2xl border border-slate-800 bg-slate-950/90">
+        <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3">
+              <span className={`px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border flex items-center space-x-1.5 ${timeContext.badgeColor}`}>
                 <TimeIcon className="w-3.5 h-3.5 mr-1" />
                 <span>{timeContext.greeting}</span>
               </span>
               <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center space-x-1 ${
+                className={`px-3 py-1 rounded-full text-[11px] font-bold border flex items-center space-x-1.5 ${
                   wsStatus === 'CONNECTED'
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                     : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                 }`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
-                <span>{wsStatus === 'CONNECTED' ? 'Live Sync' : 'Connecting'}</span>
+                <span className={`w-2 h-2 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                <span>{wsStatus === 'CONNECTED' ? 'Live Telemetry' : 'Connecting'}</span>
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1 flex items-center gap-2">
-              <span>{timeContext.greeting}, Suite Guest!</span>
+            <h1 className="text-3xl sm:text-4xl font-serif text-white tracking-tight mt-1">
+              {timeContext.greeting}, Distinguished Guest!
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-slate-400 max-w-xl leading-relaxed">
               {timeContext.subtext}
             </p>
           </div>
 
-          {/* Read-Only Room Display */}
-          <div className="bg-slate-900/90 p-3 px-4 rounded-xl border border-slate-800 flex items-center space-x-2 self-start sm:self-center shadow-inner shrink-0">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Room:</span>
-            <span className="text-sm font-extrabold text-white">{selectedRoom}</span>
+          {/* Read-Only Suite Keycard Badge */}
+          <div className="bg-slate-900/90 p-4 px-5 rounded-2xl border border-amber-500/30 flex items-center space-x-3 shadow-xl shrink-0">
+            <Crown className="w-5 h-5 text-amber-400" />
+            <div>
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">Suite Residence</span>
+              <span className="text-base font-extrabold text-white">{selectedRoom}</span>
+            </div>
           </div>
         </div>
 
         {/* Dynamic Quick Suggestions (Time-Based) */}
-        <div className="mt-6 pt-5 border-t border-slate-800/80">
-          <div className="flex items-center space-x-2 mb-3">
+        <div className="mt-8 pt-6 border-t border-slate-800/80">
+          <div className="flex items-center space-x-2 mb-4">
             <Zap className="w-4 h-4 text-amber-400 animate-pulse" />
-            <span className="text-xs font-extrabold text-slate-200 uppercase tracking-wider">
-              Quick Suggestions for {timeContext.greeting}
+            <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+              Curated Recommendations for {timeContext.greeting}
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {timeContext.suggestions.map((item) => {
               const ItemIcon = item.icon;
               const isLoading = loadingItem === item.id;
               return (
                 <div
                   key={item.id}
-                  className="bg-slate-900/80 hover:bg-slate-800/90 p-3.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 transition-all flex items-center justify-between gap-3 group"
+                  className="bg-slate-900/90 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 hover:border-amber-500/40 transition-all flex items-center justify-between gap-3 group shadow-md"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                      <ItemIcon className="w-4 h-4" />
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all shadow-inner">
+                      <ItemIcon className="w-5 h-5" />
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-white">{item.title}</h4>
-                      <span className="text-[10px] text-slate-400 block">{item.desc}</span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">{item.desc}</span>
                     </div>
                   </div>
                   <button
                     id={`quick-suggest-btn-${item.id.toLowerCase().replace(/\s+/g, '-')}`}
                     disabled={isLoading}
                     onClick={() => handleOrder(item.id)}
-                    className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg text-[11px] font-bold border border-indigo-500/30 transition-all shrink-0 flex items-center gap-1"
+                    className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 rounded-xl text-xs font-bold border border-amber-500/30 transition-all shrink-0 flex items-center gap-1 cursor-pointer"
                   >
-                    {isLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <span>Order</span>}
+                    {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <span>Request</span>}
                   </button>
                 </div>
               );
@@ -618,20 +623,20 @@ function GuestView({ roomFromUrl }) {
       </div>
 
       {/* Emergency SOS High-Visibility Banner */}
-      <div className="glass-panel p-5 rounded-2xl border-2 border-red-500/60 bg-gradient-to-r from-red-950/80 via-slate-900/90 to-red-950/80 shadow-2xl shadow-red-950/50 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="glass-panel p-6 rounded-2xl border-2 border-red-500/60 bg-gradient-to-r from-red-950/90 via-slate-950 to-red-950/90 shadow-2xl shadow-red-950/60 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-5">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-red-600/30 border border-red-500 flex items-center justify-center text-red-400 shrink-0 animate-pulse ring-2 ring-red-500/40">
-            <Siren className="w-6 h-6 text-red-400" />
+          <div className="w-14 h-14 rounded-2xl bg-red-600/30 border border-red-500 flex items-center justify-center text-red-400 shrink-0 animate-pulse ring-2 ring-red-500/40 shadow-xl">
+            <Siren className="w-7 h-7 text-red-400" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-red-500/30 text-red-200 border border-red-500/40 tracking-wider">
-                🚨 Immediate Urgent Priority
+              <span className="px-3 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-red-500/30 text-red-200 border border-red-500/50 tracking-wider">
+                🚨 Immediate Urgent SOS
               </span>
             </div>
-            <h2 className="text-lg font-extrabold text-white tracking-tight mt-1">Emergency SOS</h2>
+            <h2 className="text-xl font-serif text-white tracking-tight mt-1">Emergency SOS Dispatch</h2>
             <p className="text-xs text-slate-300">
-              Dispatches an immediate high-priority red alert to staff for Room {selectedRoom}.
+              Sends an instant top-priority alert directly to hotel operations for {selectedRoom}.
             </p>
           </div>
         </div>
@@ -639,7 +644,7 @@ function GuestView({ roomFromUrl }) {
           id="request-emergency-btn"
           disabled={loadingItem === 'EMERGENCY'}
           onClick={() => handleOrder('EMERGENCY', true)}
-          className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xl shadow-red-600/50 border border-red-400/50 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center space-x-2 shrink-0 animate-pulse"
+          className="w-full sm:w-auto px-7 py-4 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xl shadow-red-600/50 border border-red-400/50 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center space-x-2 shrink-0 animate-pulse cursor-pointer"
         >
           {loadingItem === 'EMERGENCY' ? (
             <>
@@ -656,15 +661,15 @@ function GuestView({ roomFromUrl }) {
       </div>
 
       {/* Category Filter Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div className="flex space-x-2 overflow-x-auto py-1 no-scrollbar">
+      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+        <div className="flex space-x-3 overflow-x-auto py-1 no-scrollbar">
           <button
             id="cat-tab-all"
             onClick={() => setActiveCategoryTab('ALL')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 cursor-pointer ${
               activeCategoryTab === 'ALL'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 border border-amber-400/40'
+                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
             }`}
           >
             <Layers className="w-4 h-4" />
@@ -678,10 +683,10 @@ function GuestView({ roomFromUrl }) {
                 key={cat.id}
                 id={`cat-tab-${cat.id}`}
                 onClick={() => setActiveCategoryTab(cat.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 ${
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 cursor-pointer ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                    : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+                    ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 border border-amber-400/40'
+                    : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -693,51 +698,51 @@ function GuestView({ roomFromUrl }) {
       </div>
 
       {/* Categorized Request UI Grid */}
-      <div className="space-y-8">
+      <div className="space-y-10">
         {serviceCategories
           .filter((cat) => activeCategoryTab === 'ALL' || activeCategoryTab === cat.id)
           .map((cat) => {
             const CatIcon = cat.icon;
             return (
-              <div key={cat.id} className="space-y-4 animate-fade-in">
-                <div className="flex items-center space-x-3 border-l-4 border-indigo-500 pl-3">
-                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+              <div key={cat.id} className="space-y-5 animate-fade-in">
+                <div className="flex items-center space-x-3 border-l-4 border-amber-500 pl-4 py-0.5">
+                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
                     <CatIcon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-white">{cat.title}</h2>
+                    <h2 className="text-lg font-serif text-white">{cat.title}</h2>
                     <p className="text-xs text-slate-400">{cat.description}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                   {cat.items.map((item) => {
                     const ItemIcon = item.icon;
                     const isLoading = loadingItem === item.id;
                     return (
                       <div
                         key={item.id}
-                        className="glass-card p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-4 hover:border-indigo-500/40 group transition-all"
+                        className="glass-card p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-5 hover:border-amber-500/40 group transition-all"
                       >
                         <div className="flex items-start justify-between">
-                          <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700/60 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-md">
+                          <div className="w-11 h-11 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all shadow-md">
                             <ItemIcon className="w-5 h-5" />
                           </div>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-900 text-slate-300 border border-slate-800">
                             {item.badge}
                           </span>
                         </div>
 
                         <div>
                           <h3 className="font-bold text-sm text-white">{item.title}</h3>
-                          <p className="text-xs text-slate-400 mt-0.5">{item.desc}</p>
+                          <p className="text-xs text-slate-400 mt-1 leading-relaxed">{item.desc}</p>
                         </div>
 
                         <button
                           id={`request-btn-${item.id.toLowerCase().replace(/\s+/g, '-')}`}
                           disabled={isLoading}
                           onClick={() => handleOrder(item.id)}
-                          className="w-full py-2.5 px-3 bg-slate-900 hover:bg-indigo-600 text-indigo-200 hover:text-white rounded-lg text-xs font-bold border border-slate-800 hover:border-indigo-500/50 transition-all flex items-center justify-center space-x-1.5 shadow-inner"
+                          className="w-full py-3 px-4 bg-slate-900 hover:bg-amber-500 text-amber-300 hover:text-slate-950 rounded-xl text-xs font-bold border border-slate-800 hover:border-amber-400/40 transition-all flex items-center justify-center space-x-2 shadow-inner cursor-pointer"
                         >
                           {isLoading ? (
                             <>
@@ -761,32 +766,32 @@ function GuestView({ roomFromUrl }) {
       </div>
 
       {/* Custom Request Input Section with Voice Requests */}
-      <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3 shadow-xl">
+      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-4 shadow-2xl bg-slate-950/90">
         <div className="flex items-center justify-between">
           <label htmlFor="custom-item-input" className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
-            Custom Special Request
+            Custom In-Suite Request
           </label>
-          <span className="text-[11px] text-indigo-400 font-semibold flex items-center gap-1">
+          <span className="text-[11px] text-amber-400 font-semibold flex items-center gap-1.5">
             <Mic className="w-3.5 h-3.5" /> Voice Input Supported
           </span>
         </div>
 
-        <div className="flex gap-2 flex-col sm:flex-row">
+        <div className="flex gap-3 flex-col sm:flex-row">
           <div className="relative flex-1">
             <input
               id="custom-item-input"
               type="text"
-              placeholder="e.g. Extra Feather Pillow, Dental Kit, Extra Hangers..."
+              placeholder="e.g. Extra Feather Pillow, Dental Kit, Ice Bucket..."
               value={customItem}
               onChange={(e) => setCustomItem(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleOrder(customItem)}
-              className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-xs sm:text-sm rounded-xl pl-4 pr-10 py-3 focus:outline-none focus:border-indigo-500 transition-all"
+              className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-xs sm:text-sm rounded-xl pl-4 pr-10 py-3.5 focus:outline-none focus:border-amber-500 transition-all"
             />
             {customItem && (
               <button
                 type="button"
                 onClick={() => setCustomItem('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs font-bold"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -798,10 +803,10 @@ function GuestView({ roomFromUrl }) {
             id="voice-request-btn"
             type="button"
             onClick={toggleVoiceRecognition}
-            className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border transition-all shrink-0 ${
+            className={`px-4 py-3.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border transition-all shrink-0 cursor-pointer ${
               isListening
                 ? 'bg-red-600 text-white border-red-400 animate-pulse shadow-lg shadow-red-600/40 ring-2 ring-red-500/50'
-                : 'bg-slate-900 hover:bg-slate-800 text-indigo-300 border-slate-800 hover:border-indigo-500/40'
+                : 'bg-slate-900 hover:bg-slate-800 text-amber-400 border-slate-800 hover:border-amber-500/40'
             }`}
             title={isListening ? 'Click to stop listening' : 'Speak your request using voice'}
           >
@@ -812,7 +817,7 @@ function GuestView({ roomFromUrl }) {
               </>
             ) : (
               <>
-                <Mic className="w-4 h-4 text-indigo-400" />
+                <Mic className="w-4 h-4 text-amber-400" />
                 <span>Speak Request</span>
               </>
             )}
@@ -822,9 +827,9 @@ function GuestView({ roomFromUrl }) {
             id="request-custom-btn"
             disabled={!customItem.trim() || loadingItem === customItem}
             onClick={() => handleOrder(customItem)}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/30 shrink-0"
+            className="px-6 py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 disabled:bg-slate-900 disabled:text-slate-600 text-slate-950 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center space-x-2 shadow-lg shadow-amber-500/20 shrink-0 cursor-pointer border border-amber-300/30"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-4 h-4 text-slate-950" />
             <span>Submit Custom Request</span>
           </button>
         </div>
@@ -833,21 +838,21 @@ function GuestView({ roomFromUrl }) {
       {/* ==========================================================================
          MY REQUEST STATUS SECTION (Bottom of Guest View)
          ========================================================================== */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
+      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 shadow-2xl relative overflow-hidden bg-slate-950/90">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div className="flex items-center space-x-3.5">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
               <Clock className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-bold text-white tracking-tight">My Request Status</h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  Room {selectedRoom}
+                <h2 className="text-xl font-serif text-white tracking-tight">Suite Active Request Status</h2>
+                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {selectedRoom}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Real-time tracking for services requested in your suite
+              <p className="text-xs text-slate-400 mt-0.5">
+                Real-time tracking for all services requested in your suite
               </p>
             </div>
           </div>
@@ -855,26 +860,26 @@ function GuestView({ roomFromUrl }) {
           <button
             id="refresh-guest-status-btn"
             onClick={fetchMyRequests}
-            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-slate-300 transition-all text-xs font-semibold flex items-center space-x-1.5 self-start sm:self-center"
+            className="p-2.5 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 transition-all text-xs font-bold flex items-center space-x-2 self-start sm:self-center shadow-md cursor-pointer"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
             <span>Refresh Status</span>
           </button>
         </div>
 
         {/* Requests List */}
         {myRequests.length === 0 ? (
-          <div className="text-center py-10 space-y-3 bg-slate-900/40 rounded-xl border border-slate-800/60 p-6">
-            <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
-              <ShieldCheck className="w-6 h-6 text-slate-600" />
+          <div className="text-center py-12 space-y-3 bg-slate-900/40 rounded-2xl border border-slate-800 p-8">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
+              <ShieldCheck className="w-7 h-7 text-slate-600" />
             </div>
-            <p className="text-sm font-semibold text-slate-300">No active requests for Room {selectedRoom}</p>
+            <p className="text-sm font-semibold text-slate-300">No active requests for Suite {selectedRoom}</p>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Any item or service requested above will appear here in real time with live status updates.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {myRequests.map((req, idx) => {
               const status = normalizeStatus(req.status);
               const isPending = status === 'Pending';
@@ -885,49 +890,49 @@ function GuestView({ roomFromUrl }) {
               return (
                 <div
                   key={req.id || idx}
-                  className={`glass-card p-5 rounded-xl border flex flex-col justify-between space-y-4 transition-all duration-300 animate-slide-up ${
+                  className={`glass-card p-6 rounded-2xl border flex flex-col justify-between space-y-5 transition-all duration-300 animate-slide-up ${
                     isEmergency
-                      ? 'border-2 border-red-500/80 bg-gradient-to-br from-red-950/80 via-slate-900 to-red-950/80 shadow-xl shadow-red-950/50 animate-pulse'
+                      ? 'border-2 border-red-500 bg-gradient-to-br from-red-950 via-slate-950 to-red-950 shadow-xl shadow-red-950/50 animate-pulse'
                       : isPending
                       ? 'border-amber-500/40 bg-slate-900/90 shadow-lg shadow-amber-500/5'
                       : isOnTheWay
-                      ? 'border-indigo-500/40 bg-slate-900/90 shadow-lg shadow-indigo-500/10'
+                      ? 'border-amber-500/40 bg-slate-900/90'
                       : 'border-emerald-500/30 bg-slate-950/60'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
-                      <span className={`text-[10px] font-bold tracking-widest uppercase ${isEmergency ? 'text-red-400' : 'text-indigo-400'}`}>
-                        Request #{req.id || idx + 1}
+                      <span className={`text-[10px] font-bold tracking-widest uppercase ${isEmergency ? 'text-red-400' : 'text-amber-400'}`}>
+                        Order #{req.id || idx + 1}
                       </span>
-                      <h3 className={`text-base font-bold mt-0.5 ${isEmergency ? 'text-red-200' : 'text-white'}`}>{req.item_requested}</h3>
+                      <h3 className={`text-base font-serif font-bold mt-1 ${isEmergency ? 'text-red-200' : 'text-white'}`}>{req.item_requested}</h3>
                     </div>
 
                     {/* Status Badge */}
                     <span
-                      className={`px-3 py-1 rounded-full text-[11px] font-extrabold border flex items-center space-x-1.5 shrink-0 ${
+                      className={`px-3 py-1 rounded-full text-[11px] font-bold border flex items-center space-x-1.5 shrink-0 ${
                         isEmergency
                           ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse'
                           : isPending
                           ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                           : isOnTheWay
-                          ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 animate-pulse'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
                           : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                       }`}
                     >
                       {isPending ? (
                         <>
-                          <Clock className="w-3 h-3 text-amber-400" />
+                          <Clock className="w-3.5 h-3.5 text-amber-400" />
                           <span>Pending</span>
                         </>
                       ) : isOnTheWay ? (
                         <>
-                          <Truck className="w-3 h-3 text-indigo-400" />
+                          <Truck className="w-3.5 h-3.5 text-amber-400" />
                           <span>On the Way</span>
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Delivered</span>
                         </>
                       )}
@@ -935,8 +940,8 @@ function GuestView({ roomFromUrl }) {
                   </div>
 
                   {/* Status Progress Bar */}
-                  <div className="space-y-1.5 pt-2 border-t border-slate-800/60">
-                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden flex">
+                  <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                    <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden flex border border-slate-800">
                       <div
                         className={`h-full transition-all duration-500 ${
                           isEmergency
@@ -944,7 +949,7 @@ function GuestView({ roomFromUrl }) {
                             : isPending
                             ? 'w-1/3 bg-amber-400'
                             : isOnTheWay
-                            ? 'w-2/3 bg-indigo-400'
+                            ? 'w-2/3 bg-amber-500'
                             : 'w-full bg-emerald-400'
                         }`}
                       ></div>
@@ -1012,7 +1017,6 @@ function WaiterView() {
     ws.onmessage = (event) => {
       try {
         const parsed = JSON.parse(event.data);
-        console.log('Waiter WS message received:', parsed);
 
         if (parsed.event === 'NEW_SERVICE_REQUEST' && parsed.data) {
           const newReq = { ...parsed.data, status: normalizeStatus(parsed.data.status) };
@@ -1062,7 +1066,6 @@ function WaiterView() {
 
   // Update status via backend API PUT /request/{id}
   const updateRequestStatus = async (id, newStatus) => {
-    // Optimistic UI Update
     setRequests((prev) =>
       prev.map((req) => (String(req.id) === String(id) ? { ...req, status: newStatus } : req))
     );
@@ -1091,36 +1094,36 @@ function WaiterView() {
   const deliveredCount = requests.filter((r) => normalizeStatus(r.status) === 'Delivered').length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Dashboard Top Header Bar */}
-      <div className="glass-panel p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel p-8 rounded-3xl border border-slate-800 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-5 bg-slate-950/90">
         <div>
           <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Waiter Service Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-serif text-white tracking-tight">Staff Operations &amp; Dispatch</h1>
             {newIncomingCount > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500 text-white animate-bounce">
+              <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-500 text-slate-950 animate-bounce shadow-md shadow-amber-500/20">
                 +{newIncomingCount} New
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-400 mt-1">Accept & complete live incoming requests from hotel rooms via WebSockets</p>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">Accept &amp; fulfill live incoming guest orders via real-time WebSocket telemetry</p>
         </div>
 
         {/* Live WS Connection Status Badge */}
         <div className="flex items-center space-x-3">
           <div
-            className={`px-3.5 py-1.5 rounded-full border text-xs font-bold flex items-center space-x-2 backdrop-blur-md ${
+            className={`px-4 py-2 rounded-full border text-xs font-bold flex items-center space-x-2 backdrop-blur-md ${
               wsStatus === 'CONNECTED'
-                ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30'
+                ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/30'
                 : wsStatus === 'CONNECTING'
-                ? 'bg-amber-950/60 text-amber-400 border-amber-500/30'
-                : 'bg-red-950/60 text-red-400 border-red-500/30'
+                ? 'bg-amber-950/80 text-amber-400 border-amber-500/30'
+                : 'bg-red-950/80 text-red-400 border-red-500/30'
             }`}
           >
             {wsStatus === 'CONNECTED' ? (
               <>
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 glow-green animate-pulse"></span>
-                <span>WS Connected</span>
+                <span>Telemetry Connected</span>
                 <Wifi className="w-3.5 h-3.5 ml-1" />
               </>
             ) : wsStatus === 'CONNECTING' ? (
@@ -1143,70 +1146,70 @@ function WaiterView() {
               fetchRequests();
               connectWebSocket();
             }}
-            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-slate-300 transition-all text-xs font-semibold flex items-center space-x-1"
+            className="p-2.5 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 transition-all text-xs font-bold flex items-center space-x-1.5 shadow-md cursor-pointer"
             title="Reconnect WebSocket"
           >
-            <RefreshCw className="w-4 h-4" />
-            <span className="hidden sm:inline">Sync</span>
+            <RefreshCw className="w-4 h-4 text-amber-400" />
+            <span className="hidden sm:inline">Sync Data</span>
           </button>
         </div>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="glass-card p-4 rounded-xl border flex items-center justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
+        <div className="glass-card p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
           <div>
-            <span className="text-xs font-medium text-slate-400">Total Orders</span>
-            <div className="text-2xl font-extrabold text-white mt-1">{requests.length}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders</span>
+            <div className="text-3xl font-black text-white mt-1">{requests.length}</div>
           </div>
-          <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
-            <BellRing className="w-5 h-5" />
+          <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+            <BellRing className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="glass-card p-4 rounded-xl border flex items-center justify-between">
+        <div className="glass-card p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
           <div>
-            <span className="text-xs font-medium text-amber-400">Pending</span>
-            <div className="text-2xl font-extrabold text-amber-300 mt-1">{pendingCount}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Pending</span>
+            <div className="text-3xl font-black text-amber-300 mt-1">{pendingCount}</div>
           </div>
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
-            <Clock className="w-5 h-5" />
+          <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+            <Clock className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="glass-card p-4 rounded-xl border flex items-center justify-between">
+        <div className="glass-card p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
           <div>
-            <span className="text-xs font-medium text-indigo-400">On the Way</span>
-            <div className="text-2xl font-extrabold text-indigo-300 mt-1">{onTheWayCount}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-300">On the Way</span>
+            <div className="text-3xl font-black text-amber-200 mt-1">{onTheWayCount}</div>
           </div>
-          <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
-            <Truck className="w-5 h-5" />
+          <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-2xl">
+            <Truck className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="glass-card p-4 rounded-xl border flex items-center justify-between">
+        <div className="glass-card p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
           <div>
-            <span className="text-xs font-medium text-emerald-400">Delivered</span>
-            <div className="text-2xl font-extrabold text-emerald-300 mt-1">{deliveredCount}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Delivered</span>
+            <div className="text-3xl font-black text-emerald-300 mt-1">{deliveredCount}</div>
           </div>
-          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
-            <CheckCircle2 className="w-5 h-5" />
+          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl">
+            <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div className="flex space-x-2">
+      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+        <div className="flex space-x-3">
           {['ALL', 'Pending', 'On the Way', 'Delivered'].map((tab) => (
             <button
               key={tab}
               id={`filter-tab-${tab.toLowerCase().replace(/\s+/g, '-')}`}
               onClick={() => setFilter(tab)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${
                 filter === tab
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-400/40'
+                  : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
               }`}
             >
               {tab}
@@ -1214,25 +1217,25 @@ function WaiterView() {
           ))}
         </div>
         <span className="text-xs text-slate-500 font-mono hidden sm:inline">
-          Showing {filteredRequests.length} of {requests.length} requests
+          Showing {filteredRequests.length} of {requests.length} active records
         </span>
       </div>
 
       {/* Incoming Requests Feed List */}
       {filteredRequests.length === 0 ? (
-        <div className="glass-panel p-12 rounded-2xl text-center space-y-3 border border-slate-800">
-          <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
-            <ConciergeBell className="w-6 h-6" />
+        <div className="glass-panel p-16 rounded-3xl text-center space-y-4 border border-slate-800 bg-slate-950/80">
+          <div className="w-16 h-16 mx-auto rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
+            <ConciergeBell className="w-8 h-8 text-amber-400/60" />
           </div>
-          <h3 className="text-base font-bold text-slate-300">No requests found</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <h3 className="text-lg font-serif text-slate-200">No requests found</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
             {requests.length === 0
-              ? 'Waiting for incoming room service requests over WebSocket...'
+              ? 'Listening for incoming room service requests over WebSocket telemetry...'
               : `No requests with status "${filter}".`}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredRequests.map((req, idx) => {
             const status = normalizeStatus(req.status);
             const isPending = status === 'Pending';
@@ -1243,42 +1246,42 @@ function WaiterView() {
             return (
               <div
                 key={req.id || idx}
-                className={`glass-card p-5 rounded-xl border flex flex-col justify-between space-y-4 transition-all duration-300 ${
+                className={`glass-card p-6 rounded-2xl border flex flex-col justify-between space-y-5 transition-all duration-300 ${
                   isEmergency
-                    ? 'border-2 border-red-500 bg-gradient-to-br from-red-950 via-slate-900 to-red-950 shadow-2xl shadow-red-950/60 animate-pulse ring-2 ring-red-500/80 scale-[1.02]'
+                    ? 'border-2 border-red-500 bg-gradient-to-br from-red-950 via-slate-950 to-red-950 shadow-2xl shadow-red-950/60 animate-pulse ring-2 ring-red-500/80 scale-[1.02]'
                     : isPending
                     ? 'border-amber-500/40 bg-slate-900/90 shadow-lg shadow-amber-500/5'
                     : isOnTheWay
-                    ? 'border-indigo-500/40 bg-slate-900/70'
-                    : 'border-slate-800/80 opacity-80 bg-slate-950/50'
+                    ? 'border-amber-500/30 bg-slate-900/80'
+                    : 'border-slate-800 opacity-80 bg-slate-950/60'
                 }`}
               >
                 {/* Header */}
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className={`text-[10px] font-extrabold tracking-widest uppercase ${isEmergency ? 'text-red-400' : 'text-indigo-400'}`}>
+                      <span className={`text-[11px] font-extrabold tracking-widest uppercase ${isEmergency ? 'text-red-400' : 'text-amber-400'}`}>
                         Room {req.room_number}
                       </span>
                       {isEmergency && (
-                        <span className="px-2 py-0.5 text-[9px] font-extrabold bg-red-600 text-white rounded-full animate-bounce shadow-md shadow-red-600/50 flex items-center gap-1">
+                        <span className="px-2.5 py-0.5 text-[9px] font-extrabold bg-red-600 text-white rounded-full animate-bounce shadow-md shadow-red-600/50 flex items-center gap-1">
                           <Siren className="w-3 h-3 text-white" /> EMERGENCY SOS
                         </span>
                       )}
                     </div>
-                    <h3 className={`text-base font-bold mt-0.5 ${isEmergency ? 'text-red-200 text-lg font-black' : 'text-white'}`}>
+                    <h3 className={`text-lg font-serif font-bold mt-1 ${isEmergency ? 'text-red-200 font-black' : 'text-white'}`}>
                       {req.item_requested}
                     </h3>
                   </div>
 
                   <span
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider shrink-0 ${
+                    className={`px-3 py-1 rounded-full text-[10px] font-extrabold border uppercase tracking-wider shrink-0 ${
                       isEmergency
                         ? 'bg-red-500/20 text-red-300 border-red-500/50 animate-pulse'
                         : isPending
                         ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                         : isOnTheWay
-                        ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                         : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                     }`}
                   >
@@ -1287,27 +1290,27 @@ function WaiterView() {
                 </div>
 
                 {/* Footer details & Action status switcher buttons */}
-                <div className="pt-3 border-t border-slate-800/60 flex flex-col gap-3">
+                <div className="pt-4 border-t border-slate-800/80 flex flex-col gap-3.5">
                   <div className="flex items-center justify-between text-xs text-slate-400">
                     <span className="font-mono text-[11px]">Request ID: #{req.id || idx + 1}</span>
-                    <span className="text-[11px] font-semibold text-slate-300">Staff Actions:</span>
+                    <span className="text-[11px] font-bold text-slate-300">Dispatch Action:</span>
                   </div>
 
-                  {/* PROMINENT ACTION BUTTONS: Accept (sets status to 'On the Way') & Complete (sets status to 'Delivered') */}
-                  <div className="flex items-center gap-2">
+                  {/* PROMINENT ACTION BUTTONS */}
+                  <div className="flex items-center gap-3">
                     <button
                       id={`accept-btn-${req.id || idx}`}
                       disabled={isOnTheWay || isDelivered}
                       onClick={() => updateRequestStatus(req.id, 'On the Way')}
-                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center space-x-1.5 border ${
+                      className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 border cursor-pointer ${
                         isOnTheWay
-                          ? 'bg-indigo-600/30 text-indigo-300 border-indigo-500/40 cursor-default'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 cursor-default'
                           : isDelivered
-                          ? 'bg-slate-900 text-slate-600 border-slate-800/80 cursor-not-allowed opacity-50'
-                          : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white border-indigo-400/40 shadow-lg shadow-indigo-600/25 active:scale-95'
+                          ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
+                          : 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 border-amber-300/40 shadow-lg shadow-amber-500/20 active:scale-95'
                       }`}
                     >
-                      <Truck className="w-3.5 h-3.5" />
+                      <Truck className="w-4 h-4" />
                       <span>{isOnTheWay ? 'Accepted' : 'Accept'}</span>
                     </button>
 
@@ -1315,13 +1318,13 @@ function WaiterView() {
                       id={`complete-btn-${req.id || idx}`}
                       disabled={isDelivered}
                       onClick={() => updateRequestStatus(req.id, 'Delivered')}
-                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center space-x-1.5 border ${
+                      className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 border cursor-pointer ${
                         isDelivered
                           ? 'bg-emerald-600/30 text-emerald-300 border-emerald-500/40 cursor-default'
                           : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border-emerald-400/40 shadow-lg shadow-emerald-600/25 active:scale-95'
                       }`}
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <CheckCircle2 className="w-4 h-4" />
                       <span>{isDelivered ? 'Delivered' : 'Complete'}</span>
                     </button>
                   </div>
@@ -1336,18 +1339,28 @@ function WaiterView() {
 }
 
 /* ==========================================================================
-   MANAGER VIEW COMPONENT (ANALYTICS & HOTEL ACTIVITY DASHBOARD)
+   MANAGER VIEW COMPONENT (ANALYTICS & BULK QR PRINT DASHBOARD)
    ========================================================================== */
 function ManagerView() {
   const [requests, setRequests] = useState([]);
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [activityLogs, setActivityLogs] = useState([]);
+  
+  // Single Mode State
   const [qrRoomNumber, setQrRoomNumber] = useState('101');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
+  // QR Generator Mode: 'single' | 'bulk'
+  const [qrMode, setQrMode] = useState('single');
+  
+  // Bulk Mode Inputs
+  const [bulkPrefix, setBulkPrefix] = useState('Room ');
+  const [bulkStart, setBulkStart] = useState('101');
+  const [bulkEnd, setBulkEnd] = useState('112');
+
   const socketRef = useRef(null);
 
-  // Print QR Code function: creates a temporary iframe with only QR SVG and room text
+  // Single Print QR Code function
   const handlePrintQR = () => {
     const room = qrRoomNumber || '101';
     const svgElement = document.getElementById('qr-code-svg');
@@ -1368,10 +1381,13 @@ function ManagerView() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Room ${room} QR Code</title>
+          <title>${room} QR Code</title>
           <style>
+            @media print {
+              @page { size: A4 portrait; margin: 15mm; }
+            }
             body {
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              font-family: 'Playfair Display', Georgia, serif, system-ui;
               display: flex;
               flex-direction: column;
               align-items: center;
@@ -1380,31 +1396,52 @@ function ManagerView() {
               margin: 0;
               padding: 20px;
               box-sizing: border-box;
+              background: #ffffff;
+              color: #0f172a;
+            }
+            .brand-name {
+              font-size: 14px;
+              font-weight: 700;
+              letter-spacing: 0.15em;
+              text-transform: uppercase;
+              color: #b45309;
+              margin-bottom: 20px;
+              font-family: system-ui, sans-serif;
             }
             .qr-container {
-              padding: 20px;
+              padding: 24px;
               background: #ffffff;
-              border: 2px solid #e2e8f0;
-              border-radius: 16px;
+              border: 2px dashed #cbd5e1;
+              border-radius: 20px;
               display: flex;
+              flex-direction: column;
               align-items: center;
               justify-content: center;
             }
             .room-number {
-              margin-top: 20px;
-              font-size: 28px;
+              margin-top: 24px;
+              font-size: 32px;
               font-weight: 800;
               color: #0f172a;
               letter-spacing: 0.05em;
+            }
+            .subtitle {
+              margin-top: 6px;
+              font-size: 11px;
+              color: #64748b;
+              font-family: system-ui, sans-serif;
               text-transform: uppercase;
+              letter-spacing: 0.08em;
             }
           </style>
         </head>
         <body>
+          <div class="brand-name">SmartStay Luxury Resort</div>
           <div class="qr-container">
             ${svgHtml}
+            <div class="room-number">${room}</div>
+            <div class="subtitle">Scan for In-Suite Guest Services</div>
           </div>
-          <div class="room-number">Room ${room}</div>
         </body>
       </html>
     `);
@@ -1415,6 +1452,189 @@ function ManagerView() {
       iframe.contentWindow.print();
       document.body.removeChild(iframe);
     }, 250);
+  };
+
+  // Bulk Print QR Code function: generates printable iframe with clean 6 QR per page grid
+  const handlePrintBulkQR = () => {
+    const start = parseInt(bulkStart, 10);
+    const end = parseInt(bulkEnd, 10);
+
+    if (isNaN(start) || isNaN(end)) {
+      alert('Please enter valid numeric values for Start Number and End Number.');
+      return;
+    }
+
+    if (start > end) {
+      alert('Start Number cannot be greater than End Number.');
+      return;
+    }
+
+    const totalCount = end - start + 1;
+    if (totalCount > 300) {
+      alert('Please limit bulk generation to maximum 300 QR codes at a time.');
+      return;
+    }
+
+    // Generate room names range
+    const roomNames = [];
+    for (let i = start; i <= end; i++) {
+      roomNames.push(`${bulkPrefix}${i}`);
+    }
+
+    // Render QR SVG HTML for each room using renderToStaticMarkup
+    const itemsHtml = roomNames.map((roomName) => {
+      const targetUrl = `https://smartstaymhx.netlify.app/?room=${encodeURIComponent(roomName)}`;
+      const svgMarkup = renderToStaticMarkup(
+        <QRCodeSVG
+          value={targetUrl}
+          size={130}
+          bgColor="#FFFFFF"
+          fgColor="#0F172A"
+          level="H"
+          marginSize={2}
+        />
+      );
+
+      return `
+        <div class="qr-card">
+          <div class="card-brand font-serif">SmartStay Luxury Resort</div>
+          <div class="qr-wrapper">
+            ${svgMarkup}
+          </div>
+          <div class="card-room font-serif">${roomName}</div>
+          <div class="card-sub">Scan for In-Suite Guest Services</div>
+        </div>
+      `;
+    });
+
+    // Group cards into pages of 6 QR codes per page for clean table tent printing
+    const pageSize = 6;
+    let pagesHtml = '';
+    for (let i = 0; i < itemsHtml.length; i += pageSize) {
+      const pageItems = itemsHtml.slice(i, i + pageSize).join('');
+      const isLastPage = i + pageSize >= itemsHtml.length;
+      pagesHtml += `
+        <div class="page-container ${isLastPage ? '' : 'page-break'}">
+          <div class="grid-container">
+            ${pageItems}
+          </div>
+        </div>
+      `;
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Bulk QR Codes (${bulkPrefix}${start} to ${bulkPrefix}${end})</title>
+          <style>
+            @media print {
+              @page {
+                size: A4 portrait;
+                margin: 10mm;
+              }
+              body {
+                background: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+              }
+            }
+            * {
+              box-sizing: border-box;
+              margin: 0;
+              padding: 0;
+            }
+            body {
+              font-family: 'Playfair Display', Georgia, serif, system-ui;
+              background: #ffffff;
+              color: #0f172a;
+              padding: 10px;
+            }
+            .page-container {
+              padding: 10px;
+              width: 100%;
+            }
+            .page-break {
+              page-break-after: always;
+              break-after: page;
+            }
+            .grid-container {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 20px;
+              width: 100%;
+            }
+            .qr-card {
+              border: 2px dashed #94a3b8;
+              border-radius: 16px;
+              padding: 20px 16px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              text-align: center;
+              background: #fafafa;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            .card-brand {
+              font-size: 11px;
+              font-weight: 700;
+              letter-spacing: 0.15em;
+              text-transform: uppercase;
+              color: #b45309;
+              margin-bottom: 10px;
+              font-family: system-ui, sans-serif;
+            }
+            .qr-wrapper {
+              background: #ffffff;
+              padding: 12px;
+              border-radius: 14px;
+              border: 1px solid #cbd5e1;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            }
+            .card-room {
+              margin-top: 14px;
+              font-size: 22px;
+              font-weight: 800;
+              color: #0f172a;
+              letter-spacing: 0.03em;
+            }
+            .card-sub {
+              margin-top: 4px;
+              font-size: 10px;
+              color: #64748b;
+              font-family: system-ui, sans-serif;
+              text-transform: uppercase;
+              letter-spacing: 0.06em;
+            }
+          </style>
+        </head>
+        <body>
+          ${pagesHtml}
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      document.body.removeChild(iframe);
+    }, 300);
   };
 
   // Checkout / Reset Room API call
@@ -1432,7 +1652,7 @@ function ManagerView() {
             id: Date.now() + Math.random(),
             type: 'CHECKOUT',
             timestamp: new Date().toLocaleTimeString(),
-            message: `Checkout / Reset completed for Room ${roomToCheckout}`,
+            message: `Checkout / Reset completed for ${roomToCheckout}`,
             room: roomToCheckout,
             status: 'Cleared',
           },
@@ -1484,7 +1704,6 @@ function ManagerView() {
     ws.onmessage = (event) => {
       try {
         const parsed = JSON.parse(event.data);
-        console.log('Manager WS message received:', parsed);
 
         if (parsed.event === 'NEW_SERVICE_REQUEST' && parsed.data) {
           const newReq = { ...parsed.data, status: normalizeStatus(parsed.data.status) };
@@ -1565,33 +1784,37 @@ function ManagerView() {
     (r) => normalizeStatus(r.status) === 'Delivered' || normalizeStatus(r.status) === 'Completed'
   ).length;
 
+  const startNum = parseInt(bulkStart, 10) || 0;
+  const endNum = parseInt(bulkEnd, 10) || 0;
+  const bulkCalculatedCount = endNum >= startNum && startNum > 0 ? endNum - startNum + 1 : 0;
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-10 animate-fade-in">
       {/* Header Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 shadow-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-800 shadow-2xl bg-slate-950/90 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center space-x-3">
-            <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center space-x-1.5">
-              <Shield className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1.5">
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
               <span>Manager Overview</span>
             </span>
             <span
-              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center space-x-1 ${
+              className={`px-3 py-1 rounded-full text-[11px] font-bold border flex items-center space-x-1.5 ${
                 wsStatus === 'CONNECTED'
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                   : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
               <span>{wsStatus === 'CONNECTED' ? 'Live Telemetry' : 'Connecting'}</span>
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-2 flex items-center gap-2">
-            <span>Executive Manager Dashboard</span>
+          <h1 className="text-3xl sm:text-4xl font-serif text-white tracking-tight mt-3">
+            Executive Manager Dashboard
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Top-level operational analytics & real-time hotel activity stream
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">
+            Top-level operational telemetry, room QR code dispatching &amp; live activity stream
           </p>
         </div>
 
@@ -1601,9 +1824,9 @@ function ManagerView() {
             fetchRequests();
             connectWebSocket();
           }}
-          className="p-2.5 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-slate-200 transition-all text-xs font-bold flex items-center space-x-2 self-start md:self-center shadow-lg"
+          className="p-3 px-5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-200 transition-all text-xs font-bold flex items-center space-x-2 self-start md:self-center shadow-lg cursor-pointer"
         >
-          <RefreshCw className="w-4 h-4 text-indigo-400" />
+          <RefreshCw className="w-4 h-4 text-amber-400" />
           <span>Refresh Analytics</span>
         </button>
       </div>
@@ -1611,194 +1834,307 @@ function ManagerView() {
       {/* Top-Level Analytics Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Metric 1: Total Orders */}
-        <div className="glass-card p-6 rounded-2xl border border-indigo-500/30 bg-slate-900/90 shadow-xl relative overflow-hidden group hover:border-indigo-500/60 transition-all">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-indigo-500/20 transition-all"></div>
+        <div className="glass-card p-8 rounded-3xl border border-slate-800 bg-slate-950/90 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders</span>
-            <div className="p-3 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 rounded-xl shadow-md">
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl shadow-md">
               <BarChart3 className="w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4">
+          <div className="mt-5">
             <div className="text-4xl font-black text-white tracking-tight">{totalOrders}</div>
-            <div className="flex items-center space-x-1 mt-1 text-xs text-indigo-400 font-medium">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>All requests logged across hotel</span>
+            <div className="flex items-center space-x-1.5 mt-2 text-xs text-amber-400 font-medium">
+              <TrendingUp className="w-4 h-4" />
+              <span>All requests logged across resort</span>
             </div>
           </div>
         </div>
 
         {/* Metric 2: Pending Orders */}
-        <div className="glass-card p-6 rounded-2xl border border-amber-500/30 bg-slate-900/90 shadow-xl relative overflow-hidden group hover:border-amber-500/60 transition-all">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/20 transition-all"></div>
+        <div className="glass-card p-8 rounded-3xl border border-slate-800 bg-slate-950/90 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Pending Orders</span>
-            <div className="p-3 bg-amber-500/20 border border-amber-500/30 text-amber-300 rounded-xl shadow-md">
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl shadow-md">
               <Clock className="w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4">
+          <div className="mt-5">
             <div className="text-4xl font-black text-amber-300 tracking-tight">{pendingOrders}</div>
-            <div className="flex items-center space-x-1 mt-1 text-xs text-amber-400/80 font-medium">
-              <Activity className="w-3.5 h-3.5" />
-              <span>Requires waiter acceptance</span>
+            <div className="flex items-center space-x-1.5 mt-2 text-xs text-amber-400/80 font-medium">
+              <Activity className="w-4 h-4" />
+              <span>Awaiting staff acceptance</span>
             </div>
           </div>
         </div>
 
         {/* Metric 3: Completed Orders */}
-        <div className="glass-card p-6 rounded-2xl border border-emerald-500/30 bg-slate-900/90 shadow-xl relative overflow-hidden group hover:border-emerald-500/60 transition-all">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-500/20 transition-all"></div>
+        <div className="glass-card p-8 rounded-3xl border border-slate-800 bg-slate-950/90 shadow-xl relative overflow-hidden group hover:border-emerald-500/40 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Completed Orders</span>
-            <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl shadow-md">
+            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-2xl shadow-md">
               <CheckCircle2 className="w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4">
+          <div className="mt-5">
             <div className="text-4xl font-black text-emerald-300 tracking-tight">{completedOrders}</div>
-            <div className="flex items-center space-x-1 mt-1 text-xs text-emerald-400/80 font-medium">
-              <Check className="w-3.5 h-3.5" />
-              <span>Successfully delivered to rooms</span>
+            <div className="flex items-center space-x-1.5 mt-2 text-xs text-emerald-400/80 font-medium">
+              <Check className="w-4 h-4" />
+              <span>Successfully delivered to suites</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Room QR Generator Section */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6 shadow-2xl bg-gradient-to-r from-slate-900 via-slate-900/90 to-indigo-950/30">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
-              <QrCode className="w-6 h-6" />
+      {/* Room QR Generator Section with Single & Bulk Toggle */}
+      <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-800 space-y-8 shadow-2xl bg-slate-950/90">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div className="flex items-center space-x-4">
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+              <QrCode className="w-7 h-7" />
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-bold text-white tracking-tight">Room QR Generator</h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
-                  Guest Portal QR
+              <div className="flex items-center space-x-2.5">
+                <h2 className="text-2xl font-serif text-white tracking-tight">Room QR Generator &amp; Bulk Print</h2>
+                <span className="px-3 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+                  Table Tent Print
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Generate printable QR codes linking guests directly to their suite ordering view
+              <p className="text-xs text-slate-400 mt-0.5">
+                Generate and print individual or bulk ranges of QR codes for resort room table tents
               </p>
             </div>
           </div>
+
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center p-1.5 bg-slate-900 rounded-2xl border border-slate-800 shadow-inner self-start sm:self-center">
+            <button
+              id="qr-mode-single-btn"
+              onClick={() => setQrMode('single')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                qrMode === 'single'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <QrCode className="w-4 h-4" />
+              <span>Single Room</span>
+            </button>
+
+            <button
+              id="qr-mode-bulk-btn"
+              onClick={() => setQrMode('bulk')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                qrMode === 'bulk'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Grid className="w-4 h-4" />
+              <span>Bulk Generate</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-          {/* Controls Column */}
-          <div className="flex-1 space-y-4 w-full">
-            <div>
-              <label htmlFor="qr-room-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                Room Number
-              </label>
-              <div className="relative max-w-xs">
-                <input
-                  id="qr-room-input"
-                  type="text"
-                  value={qrRoomNumber}
-                  onChange={(e) => setQrRoomNumber(e.target.value)}
-                  placeholder="e.g. 101, 102"
-                  className="w-full bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+        {/* SINGLE MODE */}
+        {qrMode === 'single' ? (
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+            {/* Controls Column */}
+            <div className="flex-1 space-y-5 w-full">
+              <div>
+                <label htmlFor="qr-room-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  Room / Suite Designation
+                </label>
+                <div className="relative max-w-sm">
+                  <input
+                    id="qr-room-input"
+                    type="text"
+                    value={qrRoomNumber}
+                    onChange={(e) => setQrRoomNumber(e.target.value)}
+                    placeholder="e.g. Room 101, Villa 5"
+                    className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-bold transition-all"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Enter any room identifier to update the encoded QR code preview.
+                </p>
+              </div>
+
+              <div className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-2 max-w-md">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 block">
+                  Encoded Guest Portal URL
+                </span>
+                <code className="text-xs text-slate-300 font-mono break-all block">
+                  https://smartstaymhx.netlify.app/?room={encodeURIComponent(qrRoomNumber || '101')}
+                </code>
+              </div>
+
+              <div className="pt-2 flex flex-wrap gap-4">
+                <button
+                  id="qr-print-download-btn"
+                  onClick={handlePrintQR}
+                  className="px-6 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-amber-500/20 flex items-center space-x-2 border border-amber-300/40 active:scale-95 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-slate-950" />
+                  <Download className="w-4 h-4 ml-0.5 text-slate-950" />
+                  <span>Print Single QR</span>
+                </button>
+
+                <button
+                  id="checkout-room-btn"
+                  disabled={checkoutLoading}
+                  onClick={handleCheckoutRoom}
+                  className="px-6 py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-red-600/30 flex items-center space-x-2 border border-red-400/30 active:scale-95 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>{checkoutLoading ? 'Processing Checkout...' : 'Checkout / Reset Room'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* QR Code Display Column */}
+            <div className="flex flex-col items-center justify-center p-8 bg-slate-900/90 rounded-3xl border border-slate-800 shadow-inner shrink-0">
+              <div className="p-5 bg-white rounded-2xl shadow-2xl ring-4 ring-amber-500/20 border border-slate-200">
+                <QRCodeSVG
+                  id="qr-code-svg"
+                  value={`https://smartstaymhx.netlify.app/?room=${encodeURIComponent(qrRoomNumber || '101')}`}
+                  size={160}
+                  bgColor="#FFFFFF"
+                  fgColor="#0F172A"
+                  level="H"
+                  marginSize={2}
                 />
               </div>
-              <p className="text-[11px] text-slate-500 mt-1.5">
-                Enter any room number to instantly update the encoded URL &amp; QR code preview.
-              </p>
+              <div className="mt-4 text-center">
+                <span className="px-4 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-serif font-bold tracking-wide uppercase">
+                  {qrRoomNumber || '101'}
+                </span>
+                <p className="text-[10px] text-slate-400 mt-1">Scan to access guest portal</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* BULK MODE */
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {/* Prefix Field */}
+              <div>
+                <label htmlFor="bulk-prefix-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  Room Prefix
+                </label>
+                <input
+                  id="bulk-prefix-input"
+                  type="text"
+                  value={bulkPrefix}
+                  onChange={(e) => setBulkPrefix(e.target.value)}
+                  placeholder='e.g. "Room " or "Villa "'
+                  className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-bold transition-all"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Prefix text prepended to each room number.
+                </p>
+              </div>
+
+              {/* Start Number Field */}
+              <div>
+                <label htmlFor="bulk-start-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  Start Number
+                </label>
+                <input
+                  id="bulk-start-input"
+                  type="number"
+                  value={bulkStart}
+                  onChange={(e) => setBulkStart(e.target.value)}
+                  placeholder="101"
+                  className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-bold transition-all"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Starting numerical room number.
+                </p>
+              </div>
+
+              {/* End Number Field */}
+              <div>
+                <label htmlFor="bulk-end-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  End Number
+                </label>
+                <input
+                  id="bulk-end-input"
+                  type="number"
+                  value={bulkEnd}
+                  onChange={(e) => setBulkEnd(e.target.value)}
+                  placeholder="120"
+                  className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-bold transition-all"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Ending numerical room number.
+                </p>
+              </div>
             </div>
 
-            <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800/80 space-y-1.5 max-w-md">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-400 block">
-                Encoded Guest Portal URL
-              </span>
-              <code className="text-xs text-slate-300 font-mono break-all block">
-                https://smartstaymhx.netlify.app/?room={qrRoomNumber || '101'}
-              </code>
-            </div>
-
-            <div className="pt-2 flex flex-wrap gap-3">
-              <button
-                id="qr-print-download-btn"
-                onClick={handlePrintQR}
-                className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-600/30 flex items-center space-x-2 border border-indigo-400/30 active:scale-95 cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <Download className="w-4 h-4 ml-0.5" />
-                <span>Print / Download</span>
-              </button>
+            {/* Summary & Action Bar */}
+            <div className="p-5 bg-slate-900/90 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center space-x-3">
+                <span className="px-3.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold">
+                  {bulkCalculatedCount > 0 ? `${bulkCalculatedCount} QR Codes` : 'Invalid Range'}
+                </span>
+                <p className="text-xs text-slate-300 font-medium">
+                  {bulkCalculatedCount > 0
+                    ? `Generating "${bulkPrefix}${bulkStart}" through "${bulkPrefix}${bulkEnd}"`
+                    : 'Set a valid range to enable bulk printing'}
+                </p>
+              </div>
 
               <button
-                id="checkout-room-btn"
-                disabled={checkoutLoading}
-                onClick={handleCheckoutRoom}
-                className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-red-600/30 flex items-center space-x-2 border border-red-400/30 active:scale-95 cursor-pointer"
+                id="bulk-print-all-btn"
+                disabled={bulkCalculatedCount <= 0}
+                onClick={handlePrintBulkQR}
+                className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 disabled:bg-slate-900 disabled:text-slate-600 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-xl shadow-amber-500/20 flex items-center justify-center space-x-2 border border-amber-300/40 active:scale-95 cursor-pointer shrink-0"
               >
-                <LogOut className="w-4 h-4" />
-                <span>{checkoutLoading ? 'Processing Checkout...' : 'Checkout / Reset Room'}</span>
+                <Printer className="w-4 h-4 text-slate-950" />
+                <Grid className="w-4 h-4 text-slate-950 ml-0.5" />
+                <span>Print All QRs ({bulkCalculatedCount})</span>
               </button>
             </div>
           </div>
-
-          {/* QR Code Display Column */}
-          <div className="flex flex-col items-center justify-center p-6 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner shrink-0">
-            <div className="p-4 bg-white rounded-2xl shadow-2xl ring-4 ring-indigo-500/20 border border-slate-200">
-              <QRCodeSVG
-                id="qr-code-svg"
-                value={`https://smartstaymhx.netlify.app/?room=${qrRoomNumber || '101'}`}
-                size={160}
-                bgColor="#FFFFFF"
-                fgColor="#0F172A"
-                level="H"
-                marginSize={2}
-              />
-            </div>
-            <div className="mt-4 text-center">
-              <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-xs font-extrabold tracking-wide uppercase">
-                Suite {qrRoomNumber || '101'}
-              </span>
-              <p className="text-[10px] text-slate-400 mt-1">Scan to access guest portal</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Live Feed of Hotel Activity */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6 shadow-2xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
+      <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-800 space-y-6 shadow-2xl bg-slate-950/90">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div className="flex items-center space-x-3.5">
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
               <Activity className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-bold text-white tracking-tight">Live Hotel Activity Feed</h2>
+                <h2 className="text-xl font-serif text-white tracking-tight">Live Resort Telemetry Stream</h2>
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
               </div>
-              <p className="text-xs text-slate-400">
-                Real-time activity stream of guest service requests & staff status updates
+              <p className="text-xs text-slate-400 mt-0.5">
+                Real-time activity stream of guest service requests &amp; staff status updates
               </p>
             </div>
           </div>
 
           <span className="text-xs text-slate-500 font-mono">
-            {requests.length} active records in database
+            {requests.length} active database records
           </span>
         </div>
 
         {/* Live Hotel Requests Activity List */}
         {requests.length === 0 ? (
-          <div className="text-center py-12 space-y-3 bg-slate-900/40 rounded-xl border border-slate-800/60 p-6">
+          <div className="text-center py-12 space-y-3 bg-slate-900/40 rounded-2xl border border-slate-800 p-8">
             <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
-              <Layers3 className="w-6 h-6" />
+              <Layers3 className="w-6 h-6 text-slate-600" />
             </div>
-            <p className="text-sm font-semibold text-slate-300">No hotel activity recorded yet</p>
+            <p className="text-sm font-semibold text-slate-300">No resort activity recorded yet</p>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Any order placed by guests or updated by waiters will instantly show up in this live feed.
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {requests.map((req, idx) => {
               const status = normalizeStatus(req.status);
               const isPending = status === 'Pending';
@@ -1809,26 +2145,26 @@ function ManagerView() {
               return (
                 <div
                   key={req.id || idx}
-                  className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+                  className={`p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition-all ${
                     isEmergency
                       ? 'bg-red-950/40 border-red-500/60 text-red-100 shadow-md shadow-red-950/40 animate-pulse'
                       : isPending
                       ? 'bg-slate-900/90 border-slate-800 hover:border-amber-500/40'
                       : isOnTheWay
-                      ? 'bg-slate-900/90 border-slate-800 hover:border-indigo-500/40'
+                      ? 'bg-slate-900/90 border-slate-800 hover:border-amber-500/30'
                       : 'bg-slate-950/60 border-slate-900 text-slate-400'
                   }`}
                 >
                   <div className="flex items-center space-x-4">
                     {/* Icon indicator */}
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold ${
+                      className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-bold ${
                         isEmergency
                           ? 'bg-red-600 text-white'
                           : isPending
                           ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                           : isOnTheWay
-                          ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                           : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       }`}
                     >
@@ -1844,13 +2180,13 @@ function ManagerView() {
                     </div>
 
                     <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-slate-800 text-slate-200 border border-slate-700">
-                          Room {req.room_number}
+                      <div className="flex items-center space-x-2.5">
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-slate-800 text-amber-400 border border-slate-700">
+                          {req.room_number}
                         </span>
                         <span className="text-xs font-mono text-slate-500">ID #{req.id || idx + 1}</span>
                       </div>
-                      <h4 className="text-sm font-bold text-white mt-1">
+                      <h4 className="text-base font-serif font-bold text-white mt-1">
                         {req.item_requested}
                       </h4>
                     </div>
@@ -1859,13 +2195,13 @@ function ManagerView() {
                   {/* Right side: Status Badge */}
                   <div className="flex items-center space-x-3 self-end sm:self-center">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider border flex items-center space-x-1.5 ${
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border flex items-center space-x-1.5 ${
                         isEmergency
                           ? 'bg-red-500/20 text-red-300 border-red-500/50 animate-pulse'
                           : isPending
                           ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                           : isOnTheWay
-                          ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                           : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                       }`}
                     >

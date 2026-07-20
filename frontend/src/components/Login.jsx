@@ -68,27 +68,27 @@ export default function Login({ targetView, onSuccess }) {
   };
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 glass-panel border border-slate-800/80 p-8 rounded-3xl shadow-2xl relative overflow-hidden bg-slate-900/90 backdrop-blur-xl">
-        {/* Decorative Background Glows */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="min-h-[75vh] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-lg w-full space-y-10 glass-panel border border-slate-800 p-10 sm:p-12 rounded-3xl shadow-2xl relative overflow-hidden bg-slate-950/95 backdrop-blur-2xl">
+        {/* Decorative Luxury Glows */}
+        <div className="absolute -top-28 -right-28 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-28 -left-28 w-56 h-56 bg-amber-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Header */}
         <div className="text-center relative z-10">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 ring-1 ring-white/20 mb-4 transform hover:scale-105 transition-transform duration-300">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-500 flex items-center justify-center shadow-xl shadow-amber-500/20 ring-1 ring-amber-400/30 mb-5 transform hover:scale-105 transition-transform duration-300">
+            <Shield className="w-8 h-8 text-slate-950" />
           </div>
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-widest mb-3">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Staff Portal Security</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-serif text-white tracking-tight leading-tight">
             {isSignUp ? 'Create Staff Account' : `Access ${viewName}`}
           </h2>
-          <p className="mt-2 text-xs sm:text-sm text-slate-400">
+          <p className="mt-3 text-xs sm:text-sm text-slate-400 max-w-sm mx-auto leading-relaxed">
             {isSignUp
-              ? 'Register new staff credentials to manage hotel operations.'
+              ? 'Register new staff credentials to manage luxury hotel operations.'
               : `Sign in with your verified credentials to access the ${viewName.toLowerCase()}.`}
           </p>
         </div>
@@ -110,15 +110,15 @@ export default function Login({ targetView, onSuccess }) {
         )}
 
         {/* Auth Form */}
-        <form className="mt-8 space-y-5 relative z-10" onSubmit={handleAuth}>
-          <div className="space-y-4">
+        <form className="mt-8 space-y-6 relative z-10" onSubmit={handleAuth}>
+          <div className="space-y-5">
             {/* Email Field */}
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
                 Staff Email Address
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -128,18 +128,18 @@ export default function Login({ targetView, onSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="staff@smartstay.com"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-950/80 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                  className="w-full pl-11 pr-4 py-3.5 bg-slate-900/90 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-200"
                 />
               </div>
             </div>
 
             {/* Password Field */}
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -149,7 +149,7 @@ export default function Login({ targetView, onSuccess }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-950/80 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                  className="w-full pl-11 pr-4 py-3.5 bg-slate-900/90 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-200"
                 />
               </div>
             </div>
@@ -160,11 +160,11 @@ export default function Login({ targetView, onSuccess }) {
             id="login-submit-btn"
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-500/25 border border-indigo-400/30 flex items-center justify-center space-x-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-indigo-500/40 transform hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full py-4 px-5 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 shadow-xl shadow-amber-500/20 border border-amber-300/40 flex items-center justify-center space-x-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-amber-500/35 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
             {loading ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
                 <span>Authenticating...</span>
               </>
             ) : (
@@ -177,7 +177,7 @@ export default function Login({ targetView, onSuccess }) {
         </form>
 
         {/* Toggle between Sign In & Sign Up */}
-        <div className="pt-4 border-t border-slate-800/80 text-center relative z-10 flex flex-col space-y-3">
+        <div className="pt-6 border-t border-slate-800/80 text-center relative z-10 flex flex-col space-y-4">
           <p className="text-xs text-slate-400">
             {isSignUp ? 'Already have a staff account?' : "Don't have an account yet?"}{' '}
             <button
@@ -188,14 +188,14 @@ export default function Login({ targetView, onSuccess }) {
                 setError(null);
                 setMessage(null);
               }}
-              className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-4 transition-colors"
+              className="text-amber-400 hover:text-amber-300 font-bold underline underline-offset-4 transition-colors cursor-pointer"
             >
               {isSignUp ? 'Sign In' : 'Sign Up for Staff Access'}
             </button>
           </p>
 
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/60 text-left text-[11px] text-slate-400">
-            <span className="font-semibold text-indigo-400">Note:</span> Guest Portal remains 100% public and does not require authentication. Staff authentication protects Waiter and Manager operations.
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-left text-[11px] text-slate-400">
+            <span className="font-semibold text-amber-400">Note:</span> Guest Portal remains 100% public and does not require authentication. Staff authentication protects Waiter and Manager operations.
           </div>
         </div>
       </div>
