@@ -61,9 +61,21 @@ const normalizeStatus = (statusStr) => {
 
 export default function App() {
   const [activeView, setActiveView] = useState('guest'); // 'guest' | 'waiter' | 'manager'
-  const [selectedRoom, setSelectedRoom] = useState('101');
+  const [roomFromUrl, setRoomFromUrl] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('room') || '';
+  });
   const [session, setSession] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      setRoomFromUrl(params.get('room') || '');
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -169,7 +181,7 @@ export default function App() {
       {/* Main Container View */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         {activeView === 'guest' ? (
-          <GuestView selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} />
+          <GuestView roomFromUrl={roomFromUrl} />
         ) : !session ? (
           <Login
             targetView={activeView}
@@ -203,7 +215,10 @@ export default function App() {
 /* ==========================================================================
    GUEST VIEW COMPONENT
    ========================================================================== */
-function GuestView({ selectedRoom, setSelectedRoom }) {
+function GuestView({ roomFromUrl }) {
+  const selectedRoom = roomFromUrl ? roomFromUrl.trim() : '';
+  const hasRoomParam = Boolean(selectedRoom);
+
   const [customItem, setCustomItem] = useState('');
   const [loadingItem, setLoadingItem] = useState(null);
   const [toast, setToast] = useState(null);
@@ -367,6 +382,7 @@ function GuestView({ selectedRoom, setSelectedRoom }) {
 
   // Fetch all requests for the currently selected room
   const fetchMyRequests = useCallback(async () => {
+    if (!selectedRoom) return;
     try {
       const res = await fetch(`${API_BASE_URL}/requests`);
       if (res.ok) {
@@ -386,6 +402,7 @@ function GuestView({ selectedRoom, setSelectedRoom }) {
 
   // Connect WebSocket for real-time guest status updates
   useEffect(() => {
+    if (!selectedRoom) return;
     fetchMyRequests();
 
     const ws = new WebSocket(WS_URL);
@@ -479,6 +496,28 @@ function GuestView({ selectedRoom, setSelectedRoom }) {
     }
   };
 
+  if (!hasRoomParam) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 sm:p-12 glass-panel rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900/90 via-slate-900/60 to-indigo-950/40 shadow-2xl space-y-6 max-w-2xl mx-auto my-12 animate-fade-in">
+        <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-xl shadow-indigo-500/10 ring-1 ring-white/10">
+          <QrCode className="w-10 h-10 animate-pulse" />
+        </div>
+        <div className="space-y-3">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Welcome to SmartStay!
+          </h1>
+          <p className="text-base sm:text-lg text-slate-300 max-w-md mx-auto leading-relaxed">
+            Please scan the QR code in your room to access services.
+          </p>
+        </div>
+        <div className="pt-4 flex items-center justify-center space-x-2 text-xs text-slate-500 font-medium">
+          <Building2 className="w-4 h-4 text-indigo-400" />
+          <span>Luxury Suites Hospitality Platform</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       {/* Toast Notification Banner */}
@@ -529,20 +568,10 @@ function GuestView({ selectedRoom, setSelectedRoom }) {
             </p>
           </div>
 
-          {/* Room Selector Dropdown */}
-          <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 flex items-center space-x-3 self-start sm:self-center shadow-inner shrink-0">
+          {/* Read-Only Room Display */}
+          <div className="bg-slate-900/90 p-3 px-4 rounded-xl border border-slate-800 flex items-center space-x-2 self-start sm:self-center shadow-inner shrink-0">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Room:</span>
-            <select
-              id="room-select-input"
-              value={selectedRoom}
-              onChange={(e) => setSelectedRoom(e.target.value)}
-              className="bg-slate-800 text-white text-sm font-bold px-3 py-1.5 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="101">Suite 101</option>
-              <option value="102">Suite 102</option>
-              <option value="204">Deluxe 204</option>
-              <option value="305">Penthouse 305</option>
-            </select>
+            <span className="text-sm font-extrabold text-white">{selectedRoom}</span>
           </div>
         </div>
 
@@ -1684,7 +1713,7 @@ function ManagerView() {
                 Encoded Guest Portal URL
               </span>
               <code className="text-xs text-slate-300 font-mono break-all block">
-                http://localhost:5174/?room={qrRoomNumber || '101'}
+                https://smartstaymhx.netlify.app/?room={qrRoomNumber || '101'}
               </code>
             </div>
 
@@ -1716,7 +1745,7 @@ function ManagerView() {
             <div className="p-4 bg-white rounded-2xl shadow-2xl ring-4 ring-indigo-500/20 border border-slate-200">
               <QRCodeSVG
                 id="qr-code-svg"
-                value={`http://localhost:5174/?room=${qrRoomNumber || '101'}`}
+                value={`https://smartstaymhx.netlify.app/?room=${qrRoomNumber || '101'}`}
                 size={160}
                 bgColor="#FFFFFF"
                 fgColor="#0F172A"
