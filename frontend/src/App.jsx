@@ -369,6 +369,9 @@ function GuestView({ selectedRoom, setSelectedRoom }) {
                 : r
             )
           );
+        } else if (payload.type === 'checkout' || payload.event === 'checkout') {
+          const checkedOutRoom = payload.room || payload.room_number || payload.data?.room;
+          setMyRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
         }
       } catch (err) {
         console.error('Error parsing Guest WS event:', err);
@@ -952,6 +955,9 @@ function WaiterView() {
                 : r
             )
           );
+        } else if (parsed.type === 'checkout' || parsed.event === 'checkout') {
+          const checkedOutRoom = parsed.room || parsed.room_number || parsed.data?.room;
+          setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
         }
       } catch (e) {
         console.error('Error parsing WS message:', e);
@@ -1260,8 +1266,110 @@ function ManagerView() {
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [activityLogs, setActivityLogs] = useState([]);
   const [qrRoomNumber, setQrRoomNumber] = useState('101');
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const socketRef = useRef(null);
+
+  // Print QR Code function: creates a temporary iframe with only QR SVG and room text
+  const handlePrintQR = () => {
+    const room = qrRoomNumber || '101';
+    const svgElement = document.getElementById('qr-code-svg');
+    const svgHtml = svgElement ? svgElement.outerHTML : '';
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Room ${room} QR Code</title>
+          <style>
+            body {
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              margin: 0;
+              padding: 20px;
+              box-sizing: border-box;
+            }
+            .qr-container {
+              padding: 20px;
+              background: #ffffff;
+              border: 2px solid #e2e8f0;
+              border-radius: 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .room-number {
+              margin-top: 20px;
+              font-size: 28px;
+              font-weight: 800;
+              color: #0f172a;
+              letter-spacing: 0.05em;
+              text-transform: uppercase;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="qr-container">
+            ${svgHtml}
+          </div>
+          <div class="room-number">Room ${room}</div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      document.body.removeChild(iframe);
+    }, 250);
+  };
+
+  // Checkout / Reset Room API call
+  const handleCheckoutRoom = async () => {
+    const roomToCheckout = qrRoomNumber || '101';
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/room/${encodeURIComponent(roomToCheckout)}/checkout`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(roomToCheckout)));
+        setActivityLogs((prev) => [
+          {
+            id: Date.now() + Math.random(),
+            type: 'CHECKOUT',
+            timestamp: new Date().toLocaleTimeString(),
+            message: `Checkout / Reset completed for Room ${roomToCheckout}`,
+            room: roomToCheckout,
+            status: 'Cleared',
+          },
+          ...prev.slice(0, 49),
+        ]);
+      } else {
+        console.error(`Checkout API failed with status ${res.status}`);
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   // Fetch all requests from backend API GET /requests
   const fetchRequests = useCallback(async () => {
@@ -1337,6 +1445,20 @@ function ManagerView() {
               timestamp: new Date().toLocaleTimeString(),
               message: `Order #${updated.id} status changed to "${normalizedStat}"`,
               status: normalizedStat,
+            },
+            ...prev.slice(0, 49),
+          ]);
+        } else if (parsed.type === 'checkout' || parsed.event === 'checkout') {
+          const checkedOutRoom = parsed.room || parsed.room_number || parsed.data?.room;
+          setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
+          setActivityLogs((prev) => [
+            {
+              id: Date.now() + Math.random(),
+              type: 'CHECKOUT',
+              timestamp: new Date().toLocaleTimeString(),
+              message: `Room ${checkedOutRoom} checked out - requests cleared`,
+              room: checkedOutRoom,
+              status: 'Cleared',
             },
             ...prev.slice(0, 49),
           ]);
@@ -1521,12 +1643,22 @@ function ManagerView() {
             <div className="pt-2 flex flex-wrap gap-3">
               <button
                 id="qr-print-download-btn"
-                onClick={() => window.print()}
+                onClick={handlePrintQR}
                 className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-600/30 flex items-center space-x-2 border border-indigo-400/30 active:scale-95 cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <Download className="w-4 h-4 ml-0.5" />
                 <span>Print / Download</span>
+              </button>
+
+              <button
+                id="checkout-room-btn"
+                disabled={checkoutLoading}
+                onClick={handleCheckoutRoom}
+                className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-red-600/30 flex items-center space-x-2 border border-red-400/30 active:scale-95 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>{checkoutLoading ? 'Processing Checkout...' : 'Checkout / Reset Room'}</span>
               </button>
             </div>
           </div>
@@ -1535,6 +1667,7 @@ function ManagerView() {
           <div className="flex flex-col items-center justify-center p-6 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner shrink-0">
             <div className="p-4 bg-white rounded-2xl shadow-2xl ring-4 ring-indigo-500/20 border border-slate-200">
               <QRCodeSVG
+                id="qr-code-svg"
                 value={`http://localhost:5174/?room=${qrRoomNumber || '101'}`}
                 size={160}
                 bgColor="#FFFFFF"

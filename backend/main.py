@@ -206,6 +206,36 @@ async def get_service_requests():
         )
 
 
+# DELETE /room/{room_number}/checkout - Delete all service requests for a room and broadcast checkout event
+@app.delete("/room/{room_number}/checkout")
+async def checkout_room(room_number: str):
+    try:
+        response = (
+            supabase.table("service_requests")
+            .delete()
+            .eq("room_number", room_number)
+            .execute()
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete service requests for room {room_number}: {str(e)}"
+        )
+
+    # Broadcast checkout event to all connected WebSockets
+    broadcast_message = {
+        "type": "checkout",
+        "room": room_number
+    }
+    await manager.broadcast(broadcast_message)
+
+    return {
+        "message": f"Successfully cleared all service requests for room {room_number}",
+        "room": room_number,
+        "deleted_records": response.data or []
+    }
+
+
 # WebSocket /ws/waiter - Manage active connections for waiters
 @app.websocket("/ws/waiter")
 async def websocket_waiter_endpoint(websocket: WebSocket):
