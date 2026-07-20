@@ -43,6 +43,8 @@ import {
   Printer,
   Download,
 } from 'lucide-react';
+import { supabase } from './supabaseClient';
+import Login from './components/Login';
 
 const API_BASE_URL = 'https://smartstay-backend-3wbb.onrender.com';
 const WS_URL = 'wss://smartstay-backend-3wbb.onrender.com/ws/waiter';
@@ -60,6 +62,30 @@ const normalizeStatus = (statusStr) => {
 export default function App() {
   const [activeView, setActiveView] = useState('guest'); // 'guest' | 'waiter' | 'manager'
   const [selectedRoom, setSelectedRoom] = useState('101');
+  const [session, setSession] = useState(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoadingAuth(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setLoadingAuth(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setActiveView('guest');
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
@@ -83,44 +109,59 @@ export default function App() {
             </div>
           </div>
 
-          {/* View Switcher Toggle - 3 Views: Guest, Waiter, Manager */}
-          <div className="flex items-center p-1 bg-slate-900/90 rounded-xl border border-slate-800 shadow-inner overflow-x-auto">
-            <button
-              id="nav-guest-view-btn"
-              onClick={() => setActiveView('guest')}
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
-                activeView === 'guest'
-                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <ConciergeBell className="w-4 h-4" />
-              <span>Guest Portal</span>
-            </button>
-            <button
-              id="nav-waiter-view-btn"
-              onClick={() => setActiveView('waiter')}
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
-                activeView === 'waiter'
-                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <UtensilsCrossed className="w-4 h-4" />
-              <span>Waiter Dashboard</span>
-            </button>
-            <button
-              id="nav-manager-view-btn"
-              onClick={() => setActiveView('manager')}
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
-                activeView === 'manager'
-                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Manager Dashboard</span>
-            </button>
+          <div className="flex items-center space-x-3">
+            {/* View Switcher Toggle - 3 Views: Guest, Waiter, Manager */}
+            <div className="flex items-center p-1 bg-slate-900/90 rounded-xl border border-slate-800 shadow-inner overflow-x-auto">
+              <button
+                id="nav-guest-view-btn"
+                onClick={() => setActiveView('guest')}
+                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
+                  activeView === 'guest'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <ConciergeBell className="w-4 h-4" />
+                <span>Guest Portal</span>
+              </button>
+              <button
+                id="nav-waiter-view-btn"
+                onClick={() => setActiveView('waiter')}
+                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
+                  activeView === 'waiter'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <UtensilsCrossed className="w-4 h-4" />
+                <span>Waiter Dashboard</span>
+              </button>
+              <button
+                id="nav-manager-view-btn"
+                onClick={() => setActiveView('manager')}
+                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
+                  activeView === 'manager'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Manager Dashboard</span>
+              </button>
+            </div>
+
+            {/* Logout Button - Rendered ONLY if user is logged in */}
+            {session && (
+              <button
+                id="nav-logout-btn"
+                onClick={handleLogout}
+                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all duration-200 shrink-0"
+                title={`Logged in as ${session.user?.email || 'Staff'}`}
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -129,6 +170,13 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         {activeView === 'guest' ? (
           <GuestView selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} />
+        ) : !session ? (
+          <Login
+            targetView={activeView}
+            onSuccess={(newSession) => {
+              setSession(newSession);
+            }}
+          />
         ) : activeView === 'waiter' ? (
           <WaiterView />
         ) : (
