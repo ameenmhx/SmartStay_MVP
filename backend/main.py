@@ -69,6 +69,12 @@ class ServiceRequestStatusUpdate(BaseModel):
     status: str
 
 
+class GuestReviewCreate(BaseModel):
+    room_number: str
+    rating: int
+    comment: str = ""
+
+
 # Root Health Check Endpoint
 @app.get("/")
 def read_root():
@@ -203,6 +209,52 @@ async def get_service_requests():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch requests from Supabase: {str(e)}"
+        )
+
+
+# POST /reviews - Save a new guest review to "guest_reviews" Supabase table
+@app.post("/reviews", status_code=status.HTTP_201_CREATED)
+async def create_guest_review(review_data: GuestReviewCreate):
+    payload = {
+        "room_number": review_data.room_number,
+        "rating": review_data.rating,
+        "comment": review_data.comment
+    }
+
+    try:
+        response = supabase.table("guest_reviews").insert(payload).execute()
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="No data returned from review insertion."
+            )
+        inserted_record = response.data[0]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to insert review into Supabase: {str(e)}"
+        )
+
+    return {
+        "message": "Guest review submitted successfully",
+        "data": inserted_record
+    }
+
+
+# GET /reviews - Fetch all guest reviews from "guest_reviews" Supabase table
+@app.get("/reviews")
+async def get_guest_reviews():
+    try:
+        response = supabase.table("guest_reviews").select("*").execute()
+        return {
+            "status": "success",
+            "count": len(response.data) if response.data else 0,
+            "data": response.data or []
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch reviews from Supabase: {str(e)}"
         )
 
 

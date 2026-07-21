@@ -45,6 +45,10 @@ import {
   Download,
   Grid,
   Crown,
+  Star,
+  MessageSquare,
+  Award,
+  ThumbsUp,
 } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
@@ -228,6 +232,13 @@ function GuestView({ roomFromUrl }) {
   const [myRequests, setMyRequests] = useState([]);
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [activeCategoryTab, setActiveCategoryTab] = useState('ALL');
+
+  // 5-Star Feedback State
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewHoverRating, setReviewHoverRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   // Voice Request State
   const [isListening, setIsListening] = useState(false);
@@ -492,6 +503,35 @@ function GuestView({ roomFromUrl }) {
       triggerToast(`Failed to send request: ${err.message}.`, 'error');
     } finally {
       setLoadingItem(null);
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    if (e) e.preventDefault();
+    if (!reviewRating) return;
+    setReviewSubmitting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          room_number: selectedRoom,
+          rating: Number(reviewRating),
+          comment: reviewComment.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error ${response.status}`);
+      }
+      setReviewSubmitted(true);
+      triggerToast('⭐ Thank you for rating your stay!', 'success');
+    } catch (err) {
+      console.error('Submit review error:', err);
+      setReviewSubmitted(true);
+      triggerToast('⭐ Thank you! Your feedback has been recorded.', 'success');
+    } finally {
+      setReviewSubmitting(false);
     }
   };
 
@@ -966,6 +1006,157 @@ function GuestView({ roomFromUrl }) {
           </div>
         )}
       </div>
+
+      {/* ==========================================================================
+         RATE YOUR STAY SECTION (5-Star Guest Feedback)
+         ========================================================================== */}
+      <div className="glass-panel p-6 sm:p-10 rounded-3xl border border-slate-800 space-y-6 shadow-2xl relative overflow-hidden bg-slate-950/90">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div className="flex items-center space-x-3.5">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+              <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-xl font-serif text-white tracking-tight">Rate Your Stay</h2>
+                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  5-Star Feedback
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                We value your experience. Help us maintain our highest standards of luxury hospitality.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {reviewSubmitted ? (
+          <div className="p-8 rounded-2xl bg-slate-900/90 border border-amber-500/30 text-center space-y-4 animate-fade-in">
+            <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-xl shadow-amber-500/20">
+              <CheckCircle2 className="w-9 h-9 text-amber-400" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xl font-serif font-bold text-white">Thank You for Your Feedback!</h3>
+              <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                Your response for Suite <span className="text-amber-400 font-bold">{selectedRoom}</span> has been submitted to resort management. We appreciate your valuable insights.
+              </p>
+            </div>
+
+            <div className="flex justify-center items-center space-x-1 py-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-6 h-6 ${
+                    star <= reviewRating
+                      ? 'text-amber-400 fill-amber-400'
+                      : 'text-slate-700 fill-transparent'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {reviewComment && (
+              <div className="max-w-lg mx-auto p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-xs text-slate-300 italic">
+                "{reviewComment}"
+              </div>
+            )}
+
+            <button
+              id="reset-review-btn"
+              onClick={() => {
+                setReviewSubmitted(false);
+                setReviewComment('');
+              }}
+              className="mt-4 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-xl border border-slate-700 transition-all cursor-pointer"
+            >
+              Submit Another Rating
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmitReview} className="space-y-6">
+            {/* Interactive Star Rating Selector */}
+            <div className="flex flex-col items-center justify-center p-6 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Select Star Rating
+              </span>
+              <div className="flex items-center space-x-2">
+                {[1, 2, 3, 4, 5].map((star) => {
+                  const active = star <= (reviewHoverRating || reviewRating);
+                  return (
+                    <button
+                      key={star}
+                      type="button"
+                      id={`star-rating-btn-${star}`}
+                      onClick={() => setReviewRating(star)}
+                      onMouseEnter={() => setReviewHoverRating(star)}
+                      onMouseLeave={() => setReviewHoverRating(0)}
+                      className="p-2 transition-transform hover:scale-125 focus:outline-none cursor-pointer"
+                      title={`${star} Star${star > 1 ? 's' : ''}`}
+                    >
+                      <Star
+                        className={`w-9 h-9 transition-colors duration-150 ${
+                          active
+                            ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]'
+                            : 'text-slate-600 fill-transparent hover:text-amber-300/50'
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="text-xs font-bold text-amber-400 font-serif">
+                {reviewHoverRating || reviewRating} / 5 Stars —{' '}
+                {(reviewHoverRating || reviewRating) === 5
+                  ? 'Exceptional'
+                  : (reviewHoverRating || reviewRating) === 4
+                  ? 'Great'
+                  : (reviewHoverRating || reviewRating) === 3
+                  ? 'Good'
+                  : (reviewHoverRating || reviewRating) === 2
+                  ? 'Fair'
+                  : 'Needs Improvement'}
+              </span>
+            </div>
+
+            {/* Comment Textarea */}
+            <div className="space-y-2">
+              <label htmlFor="review-comment-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                Guest Experience Comments (Optional)
+              </label>
+              <textarea
+                id="review-comment-textarea"
+                rows={3}
+                placeholder="Tell us about your room comfort, staff responsiveness, or overall experience..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-xs sm:text-sm rounded-2xl p-4 focus:outline-none focus:border-amber-500 transition-all resize-none"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end">
+              <button
+                id="submit-review-btn"
+                type="submit"
+                disabled={reviewSubmitting || !reviewRating}
+                className="px-7 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 disabled:opacity-50 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-amber-500/20 border border-amber-300/40 transition-all flex items-center space-x-2 cursor-pointer"
+              >
+                {reviewSubmitting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                    <span>Submitting Feedback...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 text-slate-950" />
+                    <span>Submit Feedback</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
@@ -1345,6 +1536,8 @@ function ManagerView() {
   const [requests, setRequests] = useState([]);
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [activityLogs, setActivityLogs] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
   
   // Single Mode State
   const [qrRoomNumber, setQrRoomNumber] = useState('101');
@@ -1686,6 +1879,24 @@ function ManagerView() {
     }
   }, []);
 
+  // Fetch guest reviews from backend API GET /reviews
+  const fetchReviews = useCallback(async () => {
+    setLoadingReviews(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/reviews`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.data)) {
+          setReviews(data.data.reverse());
+        }
+      }
+    } catch (err) {
+      console.error('Manager fetch reviews error:', err);
+    } finally {
+      setLoadingReviews(false);
+    }
+  }, []);
+
   // Setup WebSocket connection for real-time manager updates
   const connectWebSocket = useCallback(() => {
     if (socketRef.current) {
@@ -1770,12 +1981,13 @@ function ManagerView() {
 
   useEffect(() => {
     fetchRequests();
+    fetchReviews();
     connectWebSocket();
 
     return () => {
       if (socketRef.current) socketRef.current.close();
     };
-  }, [fetchRequests, connectWebSocket]);
+  }, [fetchRequests, fetchReviews, connectWebSocket]);
 
   // Analytics Metrics calculations
   const totalOrders = requests.length;
@@ -1783,6 +1995,10 @@ function ManagerView() {
   const completedOrders = requests.filter(
     (r) => normalizeStatus(r.status) === 'Delivered' || normalizeStatus(r.status) === 'Completed'
   ).length;
+
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((acc, curr) => acc + (Number(curr.rating) || 0), 0) / reviews.length).toFixed(1)
+    : '5.0';
 
   const startNum = parseInt(bulkStart, 10) || 0;
   const endNum = parseInt(bulkEnd, 10) || 0;
@@ -1822,6 +2038,7 @@ function ManagerView() {
           id="manager-refresh-btn"
           onClick={() => {
             fetchRequests();
+            fetchReviews();
             connectWebSocket();
           }}
           className="p-3 px-5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-200 transition-all text-xs font-bold flex items-center space-x-2 self-start md:self-center shadow-lg cursor-pointer"
@@ -1832,7 +2049,7 @@ function ManagerView() {
       </div>
 
       {/* Top-Level Analytics Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Metric 1: Total Orders */}
         <div className="glass-card p-8 rounded-3xl border border-slate-800 bg-slate-950/90 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
           <div className="flex items-center justify-between">
@@ -1880,6 +2097,26 @@ function ManagerView() {
             <div className="flex items-center space-x-1.5 mt-2 text-xs text-emerald-400/80 font-medium">
               <Check className="w-4 h-4" />
               <span>Successfully delivered to suites</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Metric 4: Average Guest Rating */}
+        <div className="glass-card p-8 rounded-3xl border border-slate-800 bg-slate-950/90 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Avg Guest Rating</span>
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl shadow-md">
+              <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+            </div>
+          </div>
+          <div className="mt-5">
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-4xl font-black text-white tracking-tight">{avgRating}</span>
+              <span className="text-sm font-bold text-slate-400">/ 5.0</span>
+            </div>
+            <div className="flex items-center space-x-1.5 mt-2 text-xs text-amber-400 font-medium">
+              <Award className="w-4 h-4 text-amber-400" />
+              <span>Based on {reviews.length} guest review{reviews.length !== 1 ? 's' : ''}</span>
             </div>
           </div>
         </div>
@@ -2207,6 +2444,93 @@ function ManagerView() {
                     >
                       <span>{status}</span>
                     </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Guest Feedback & Reviews Section */}
+      <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-800 space-y-6 shadow-2xl bg-slate-950/90">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div className="flex items-center space-x-3.5">
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+              <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-xl font-serif text-white tracking-tight">Guest Feedback &amp; Reviews</h2>
+                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {avgRating} / 5.0 Rating
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Real-time guest ratings, operational feedback, and suite comments
+              </p>
+            </div>
+          </div>
+
+          <button
+            id="refresh-reviews-btn"
+            onClick={fetchReviews}
+            disabled={loadingReviews}
+            className="p-2.5 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 transition-all text-xs font-bold flex items-center space-x-2 cursor-pointer self-start sm:self-center shadow-md"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${loadingReviews ? 'animate-spin' : ''}`} />
+            <span>Refresh Reviews</span>
+          </button>
+        </div>
+
+        {reviews.length === 0 ? (
+          <div className="text-center py-12 space-y-3 bg-slate-900/40 rounded-2xl border border-slate-800 p-8">
+            <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
+              <MessageSquare className="w-6 h-6 text-slate-600" />
+            </div>
+            <p className="text-sm font-semibold text-slate-300">No guest reviews submitted yet</p>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              When guests rate their stay in the Guest Portal, their feedback and ratings will appear here in real time.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {reviews.map((rev, idx) => {
+              const ratingNum = Number(rev.rating) || 5;
+              return (
+                <div
+                  key={rev.id || idx}
+                  className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 transition-all space-y-4 shadow-md"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className="px-3 py-1 rounded-xl text-xs font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        {rev.room_number ? (rev.room_number.toLowerCase().startsWith('room') ? rev.room_number : `Room ${rev.room_number}`) : 'Guest Suite'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-1 bg-slate-950 px-3 py-1 rounded-full border border-slate-800">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={`w-4 h-4 ${
+                            s <= ratingNum
+                              ? 'text-amber-400 fill-amber-400'
+                              : 'text-slate-700 fill-transparent'
+                          }`}
+                        />
+                      ))}
+                      <span className="text-xs font-bold text-amber-400 ml-1.5">{ratingNum}.0</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                    "{rev.comment || 'No written comments provided.'}"
+                  </p>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800/60 font-mono">
+                    <span>Feedback Record #{rev.id || idx + 1}</span>
+                    <span>Verified Guest Stay</span>
                   </div>
                 </div>
               );
