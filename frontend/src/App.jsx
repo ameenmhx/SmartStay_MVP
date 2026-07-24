@@ -107,37 +107,37 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen bg-brand-surface text-brand-body flex flex-col font-sans selection:bg-brand-primary selection:text-white">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 glass-panel border-b border-slate-800 px-6 lg:px-10 py-4 shadow-2xl bg-slate-950/90 backdrop-blur-2xl">
+      <header className="sticky top-0 z-50 bg-white border-b border-brand-border px-6 lg:px-10 py-4 shadow-stripe">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/20 ring-1 ring-amber-300/40">
-              <Crown className="w-6 h-6 text-slate-950" />
+            <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center shadow-stripe">
+              <Crown className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center space-x-2.5">
-                <span className="font-serif font-bold text-xl tracking-tight text-white">
+                <span className="font-sans font-bold text-lg tracking-tight text-brand-heading">
                   SmartStay
                 </span>
-                <span className="px-2.5 py-0.5 text-[10px] font-bold tracking-widest uppercase rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                <span className="px-2.5 py-0.5 text-[9px] font-bold tracking-wider uppercase rounded-full bg-brand-surface text-brand-heading border border-brand-border">
                   5-Star Luxury Resort
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium">In-Suite Hospitality Telemetry</p>
+              <p className="text-xs text-brand-body font-medium">In-Suite Hospitality Telemetry</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
             {/* View Switcher Toggle - 3 Views: Guest, Waiter, Manager */}
-            <div className="flex items-center p-1.5 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner overflow-x-auto">
+            <div className="flex items-center p-1 bg-brand-surface rounded-xl border border-brand-border overflow-x-auto">
               <button
                 id="nav-guest-view-btn"
                 onClick={() => setActiveView('guest')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeView === 'guest'
-                    ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-brand-primary text-white shadow-stripe'
+                    : 'text-brand-body hover:text-brand-heading hover:bg-brand-card/50'
                 }`}
               >
                 <ConciergeBell className="w-4 h-4" />
@@ -146,10 +146,10 @@ export default function App() {
               <button
                 id="nav-waiter-view-btn"
                 onClick={() => setActiveView('waiter')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeView === 'waiter'
-                    ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-brand-primary text-white shadow-stripe'
+                    : 'text-brand-body hover:text-brand-heading hover:bg-brand-card/50'
                 }`}
               >
                 <UtensilsCrossed className="w-4 h-4" />
@@ -158,10 +158,10 @@ export default function App() {
               <button
                 id="nav-manager-view-btn"
                 onClick={() => setActiveView('manager')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeView === 'manager'
-                    ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-brand-primary text-white shadow-stripe'
+                    : 'text-brand-body hover:text-brand-heading hover:bg-brand-card/50'
                 }`}
               >
                 <BarChart3 className="w-4 h-4" />
@@ -174,7 +174,7 @@ export default function App() {
               <button
                 id="nav-logout-btn"
                 onClick={handleLogout}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all duration-200 shrink-0 cursor-pointer"
+                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-all duration-200 shrink-0 cursor-pointer"
                 title={`Logged in as ${session.user?.email || 'Staff'}`}
               >
                 <LogOut className="w-4 h-4" />
@@ -204,12 +204,12 @@ export default function App() {
       </main>
 
       {/* Modern Luxury Footer */}
-      <footer className="border-t border-slate-800/80 py-6 px-8 text-center text-xs text-slate-500 bg-slate-950">
+      <footer className="border-t border-brand-border py-6 px-8 text-center text-xs text-brand-body bg-white">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="font-medium">SmartStay Luxury Resort MVP Platform &copy; {new Date().getFullYear()}</span>
           <div className="flex items-center space-x-4">
-            <span className="inline-flex items-center text-slate-400 font-mono text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+            <span className="inline-flex items-center text-brand-body font-mono text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-brand-secondary mr-2 animate-pulse"></span>
               Live Telemetry Engine Active
             </span>
           </div>
@@ -254,7 +254,7 @@ function GuestView({ roomFromUrl }) {
         greeting: 'Good Morning',
         subtext: 'Start your morning with fresh artisan coffee, warm gourmet bakery, or fresh room amenities.',
         icon: Sunrise,
-        badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        badgeColor: 'bg-brand-surface text-brand-body border-brand-border',
         suggestions: [
           { id: 'Coffee', title: 'Fresh Artisan Coffee', desc: 'Espresso or Americano set', icon: Coffee, badge: 'Morning Brew' },
           { id: 'Food', title: 'Breakfast Croissant', desc: 'Warm flaky French bakery basket', icon: UtensilsCrossed, badge: 'Gourmet' },
@@ -266,7 +266,7 @@ function GuestView({ roomFromUrl }) {
         greeting: 'Good Afternoon',
         subtext: 'Stay refreshed with afternoon beverages, chef-prepared lunch, or private chauffeur shuttle.',
         icon: Sun,
-        badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        badgeColor: 'bg-brand-surface text-brand-body border-brand-border',
         suggestions: [
           { id: 'Water', title: 'Chilled Mineral Water', desc: 'Ice-cold sparkling or still water', icon: Droplets, badge: 'Hydration' },
           { id: 'Food', title: 'In-Suite Gourmet Lunch', desc: 'Chef specialty warm entree', icon: UtensilsCrossed, badge: 'Fine Dining' },
@@ -278,7 +278,7 @@ function GuestView({ roomFromUrl }) {
         greeting: 'Good Evening',
         subtext: 'Unwind your evening with cozy plush duvets, soothing herbal teas, or turndown refresh service.',
         icon: Moon,
-        badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        badgeColor: 'bg-brand-surface text-brand-body border-brand-border',
         suggestions: [
           { id: 'Extra Blankets', title: 'Extra Blanket Set', desc: 'Plush velvet duvet & feather pillows', icon: Sparkles, badge: 'Night Comfort' },
           { id: 'Tea', title: 'Organic Chamomile Tea', desc: 'Soothing bedtime herbal infusion', icon: Coffee, badge: 'Nightcap' },
@@ -537,23 +537,23 @@ function GuestView({ roomFromUrl }) {
 
   if (!hasRoomParam) {
     return (
-      <div className="min-h-[65vh] flex flex-col items-center justify-center text-center p-10 sm:p-16 glass-panel rounded-3xl border border-slate-800 bg-slate-950/90 shadow-2xl space-y-8 max-w-2xl mx-auto my-12 animate-fade-in">
-        <div className="w-24 h-24 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-2xl shadow-amber-500/20 ring-1 ring-amber-400/30">
-          <QrCode className="w-12 h-12 animate-pulse text-amber-400" />
+      <div className="min-h-[65vh] flex flex-col items-center justify-center text-center p-10 sm:p-16 bg-brand-card border border-brand-border rounded-2xl shadow-stripe space-y-8 max-w-2xl mx-auto my-12 animate-fade-in">
+        <div className="w-20 h-20 rounded-2xl bg-brand-surface border border-brand-border flex items-center justify-center text-brand-primary shadow-stripe">
+          <QrCode className="w-10 h-10 animate-pulse text-brand-primary" />
         </div>
         <div className="space-y-4">
-          <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-amber-500/10 text-amber-400 border border-amber-500/30">
+          <span className="px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-brand-surface text-brand-body border border-brand-border">
             Welcome to SmartStay
           </span>
-          <h1 className="text-3xl sm:text-5xl font-serif text-white tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl text-brand-heading font-semibold tracking-tight leading-tight">
             5-Star Resort Guest Experience
           </h1>
-          <p className="text-sm sm:text-base text-slate-400 max-w-md mx-auto leading-relaxed">
+          <p className="text-sm text-brand-body max-w-md mx-auto leading-relaxed">
             Please scan the QR code located on your suite table tent to access your personalized in-room concierge portal.
           </p>
         </div>
-        <div className="pt-4 flex items-center justify-center space-x-2 text-xs text-slate-500 font-bold uppercase tracking-widest">
-          <Crown className="w-4 h-4 text-amber-400" />
+        <div className="pt-4 flex items-center justify-center space-x-2 text-xs text-brand-body font-semibold uppercase tracking-wider">
+          <Crown className="w-4 h-4 text-brand-primary" />
           <span>Luxury Suites Hospitality Platform</span>
         </div>
       </div>
@@ -565,66 +565,65 @@ function GuestView({ roomFromUrl }) {
       {/* Toast Notification Banner */}
       {toast && (
         <div
-          className={`p-5 rounded-2xl border flex items-center space-x-4 shadow-2xl backdrop-blur-xl transition-all transform animate-slide-up ${
+          className={`p-5 rounded-xl border flex items-center space-x-4 shadow-stripe backdrop-blur-xl transition-all transform animate-slide-up ${
             toast.type === 'error'
-              ? 'bg-red-950/95 border-red-500/60 text-red-100 shadow-red-950/40'
-              : 'bg-emerald-950/95 border-emerald-500/60 text-emerald-100 shadow-emerald-950/40'
+              ? 'bg-red-50 border-red-200 text-red-700'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-700'
           }`}
         >
           {toast.type === 'error' ? (
-            <AlertCircle className="w-6 h-6 text-red-400 shrink-0" />
+            <AlertCircle className="w-6 h-6 text-red-500 shrink-0" />
           ) : (
-            <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
           )}
           <div className="text-xs sm:text-sm font-semibold leading-relaxed">{toast.msg}</div>
         </div>
       )}
 
       {/* Time-Aware UI: Dynamic Greeting Banner */}
-      <div className="glass-panel p-8 sm:p-10 rounded-3xl relative overflow-hidden shadow-2xl border border-slate-800 bg-slate-950/90">
-        <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border shadow-stripe relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center space-x-3">
-              <span className={`px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border flex items-center space-x-1.5 ${timeContext.badgeColor}`}>
-                <TimeIcon className="w-3.5 h-3.5 mr-1" />
+              <span className={`px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider border flex items-center space-x-1.5 ${timeContext.badgeColor}`}>
+                <TimeIcon className="w-3.5 h-3.5 mr-1 text-brand-primary" />
                 <span>{timeContext.greeting}</span>
               </span>
               <span
-                className={`px-3 py-1 rounded-full text-[11px] font-bold border flex items-center space-x-1.5 ${
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold border flex items-center space-x-1.5 ${
                   wsStatus === 'CONNECTED'
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                    : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                <span className={`w-2 h-2 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
                 <span>{wsStatus === 'CONNECTED' ? 'Live Telemetry' : 'Connecting'}</span>
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-serif text-white tracking-tight mt-1">
+            <h1 className="text-2xl sm:text-3xl text-brand-heading font-semibold tracking-tight mt-1">
               {timeContext.greeting}, Distinguished Guest!
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-xl leading-relaxed">
+            <p className="text-sm text-brand-body max-w-xl leading-relaxed">
               {timeContext.subtext}
             </p>
           </div>
 
           {/* Read-Only Suite Keycard Badge */}
-          <div className="bg-slate-900/90 p-4 px-5 rounded-2xl border border-amber-500/30 flex items-center space-x-3 shadow-xl shrink-0">
-            <Crown className="w-5 h-5 text-amber-400" />
+          <div className="bg-brand-surface p-4 px-5 rounded-xl border border-brand-border flex items-center space-x-3 shadow-stripe shrink-0">
+            <Crown className="w-5 h-5 text-brand-primary" />
             <div>
-              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">Suite Residence</span>
-              <span className="text-base font-extrabold text-white">{selectedRoom}</span>
+              <span className="text-[10px] font-bold text-brand-body uppercase tracking-wider block">Suite Residence</span>
+              <span className="text-base font-semibold text-brand-heading">{selectedRoom}</span>
             </div>
           </div>
         </div>
 
         {/* Dynamic Quick Suggestions (Time-Based) */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80">
+        <div className="mt-8 pt-6 border-t border-brand-border">
           <div className="flex items-center space-x-2 mb-4">
-            <Zap className="w-4 h-4 text-amber-400 animate-pulse" />
-            <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+            <Zap className="w-4 h-4 text-brand-primary animate-pulse" />
+            <span className="text-xs font-bold text-brand-heading uppercase tracking-wider">
               Curated Recommendations for {timeContext.greeting}
             </span>
           </div>
@@ -636,22 +635,22 @@ function GuestView({ roomFromUrl }) {
               return (
                 <div
                   key={item.id}
-                  className="bg-slate-900/90 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 hover:border-amber-500/40 transition-all flex items-center justify-between gap-3 group shadow-md"
+                  className="bg-brand-card hover:bg-brand-surface/40 p-4 rounded-xl border border-brand-border hover:border-brand-primary/20 transition-all flex items-center justify-between gap-3 group shadow-stripe"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all shadow-inner">
+                    <div className="w-10 h-10 rounded-lg bg-brand-surface border border-brand-border flex items-center justify-center text-brand-primary shadow-inner">
                       <ItemIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-white">{item.title}</h4>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">{item.desc}</span>
+                      <h4 className="text-xs font-bold text-brand-heading">{item.title}</h4>
+                      <span className="text-[10px] text-brand-body block mt-0.5">{item.desc}</span>
                     </div>
                   </div>
                   <button
                     id={`quick-suggest-btn-${item.id.toLowerCase().replace(/\s+/g, '-')}`}
                     disabled={isLoading}
                     onClick={() => handleOrder(item.id)}
-                    className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 rounded-xl text-xs font-bold border border-amber-500/30 transition-all shrink-0 flex items-center gap-1 cursor-pointer"
+                    className="px-3.5 py-1.5 bg-brand-primary hover:bg-brand-primary/95 text-white shadow-stripe hover:shadow-stripe-hover rounded-lg text-xs font-semibold transition-all shrink-0 flex items-center gap-1 cursor-pointer"
                   >
                     {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <span>Request</span>}
                   </button>
@@ -663,19 +662,19 @@ function GuestView({ roomFromUrl }) {
       </div>
 
       {/* Emergency SOS High-Visibility Banner */}
-      <div className="glass-panel p-6 rounded-2xl border-2 border-red-500/60 bg-gradient-to-r from-red-950/90 via-slate-950 to-red-950/90 shadow-2xl shadow-red-950/60 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-5">
+      <div className="bg-brand-accent p-6 rounded-2xl text-white shadow-stripe relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-5">
         <div className="flex items-center space-x-4">
-          <div className="w-14 h-14 rounded-2xl bg-red-600/30 border border-red-500 flex items-center justify-center text-red-400 shrink-0 animate-pulse ring-2 ring-red-500/40 shadow-xl">
-            <Siren className="w-7 h-7 text-red-400" />
+          <div className="w-14 h-14 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-white shrink-0 animate-pulse shadow-stripe">
+            <Siren className="w-7 h-7 text-white" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="px-3 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-red-500/30 text-red-200 border border-red-500/50 tracking-wider">
+              <span className="px-3 py-0.5 text-[10px] font-bold uppercase rounded-full bg-white/20 text-white border border-white/30 tracking-wider">
                 🚨 Immediate Urgent SOS
               </span>
             </div>
-            <h2 className="text-xl font-serif text-white tracking-tight mt-1">Emergency SOS Dispatch</h2>
-            <p className="text-xs text-slate-300">
+            <h2 className="text-xl font-semibold text-white tracking-tight mt-1">Emergency SOS Dispatch</h2>
+            <p className="text-xs text-white/90">
               Sends an instant top-priority alert directly to hotel operations for {selectedRoom}.
             </p>
           </div>
@@ -684,16 +683,16 @@ function GuestView({ roomFromUrl }) {
           id="request-emergency-btn"
           disabled={loadingItem === 'EMERGENCY'}
           onClick={() => handleOrder('EMERGENCY', true)}
-          className="w-full sm:w-auto px-7 py-4 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xl shadow-red-600/50 border border-red-400/50 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center space-x-2 shrink-0 animate-pulse cursor-pointer"
+          className="w-full sm:w-auto px-7 py-3.5 bg-white hover:bg-white/90 text-brand-accent font-bold text-xs sm:text-sm rounded-xl shadow-stripe transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center space-x-2 shrink-0 cursor-pointer"
         >
           {loadingItem === 'EMERGENCY' ? (
             <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
+              <RefreshCw className="w-4 h-4 animate-spin text-brand-accent" />
               <span>DISPATCHING SOS...</span>
             </>
           ) : (
             <>
-              <Siren className="w-4 h-4 text-white" />
+              <Siren className="w-4 h-4 text-brand-accent" />
               <span>SEND EMERGENCY SOS</span>
             </>
           )}
@@ -701,15 +700,15 @@ function GuestView({ roomFromUrl }) {
       </div>
 
       {/* Category Filter Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+      <div className="flex items-center justify-between border-b border-brand-border pb-4">
         <div className="flex space-x-3 overflow-x-auto py-1 no-scrollbar">
           <button
             id="cat-tab-all"
             onClick={() => setActiveCategoryTab('ALL')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 cursor-pointer ${
+            className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 shrink-0 cursor-pointer ${
               activeCategoryTab === 'ALL'
-                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 border border-amber-400/40'
-                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                ? 'bg-brand-primary text-white shadow-stripe'
+                : 'bg-brand-card text-brand-body hover:text-brand-heading hover:bg-brand-surface border border-brand-border'
             }`}
           >
             <Layers className="w-4 h-4" />
@@ -723,10 +722,10 @@ function GuestView({ roomFromUrl }) {
                 key={cat.id}
                 id={`cat-tab-${cat.id}`}
                 onClick={() => setActiveCategoryTab(cat.id)}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 cursor-pointer ${
+                className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 shrink-0 cursor-pointer ${
                   isActive
-                    ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 border border-amber-400/40'
-                    : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                    ? 'bg-brand-primary text-white shadow-stripe'
+                    : 'bg-brand-card text-brand-body hover:text-brand-heading hover:bg-brand-surface border border-brand-border'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -745,13 +744,13 @@ function GuestView({ roomFromUrl }) {
             const CatIcon = cat.icon;
             return (
               <div key={cat.id} className="space-y-5 animate-fade-in">
-                <div className="flex items-center space-x-3 border-l-4 border-amber-500 pl-4 py-0.5">
-                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <div className="flex items-center space-x-3 border-l-4 border-brand-primary pl-4 py-0.5">
+                  <div className="p-2 rounded-xl bg-brand-surface text-brand-primary border border-brand-border">
                     <CatIcon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-serif text-white">{cat.title}</h2>
-                    <p className="text-xs text-slate-400">{cat.description}</p>
+                    <h2 className="text-lg font-semibold text-brand-heading">{cat.title}</h2>
+                    <p className="text-xs text-brand-body">{cat.description}</p>
                   </div>
                 </div>
 
@@ -762,37 +761,37 @@ function GuestView({ roomFromUrl }) {
                     return (
                       <div
                         key={item.id}
-                        className="glass-card p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-5 hover:border-amber-500/40 group transition-all"
+                        className="bg-brand-card border border-brand-border rounded-xl p-5 shadow-stripe flex flex-col justify-between space-y-5 hover:border-brand-primary/20 hover:shadow-stripe-hover transition-all duration-300 group"
                       >
                         <div className="flex items-start justify-between">
-                          <div className="w-11 h-11 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all shadow-md">
+                          <div className="w-11 h-11 rounded-xl bg-brand-surface border border-brand-border flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all shadow-stripe">
                             <ItemIcon className="w-5 h-5" />
                           </div>
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-900 text-slate-300 border border-slate-800">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-surface text-brand-body border border-brand-border">
                             {item.badge}
                           </span>
                         </div>
 
                         <div>
-                          <h3 className="font-bold text-sm text-white">{item.title}</h3>
-                          <p className="text-xs text-slate-400 mt-1 leading-relaxed">{item.desc}</p>
+                          <h3 className="font-bold text-sm text-brand-heading">{item.title}</h3>
+                          <p className="text-xs text-brand-body mt-1 leading-relaxed">{item.desc}</p>
                         </div>
 
                         <button
                           id={`request-btn-${item.id.toLowerCase().replace(/\s+/g, '-')}`}
                           disabled={isLoading}
                           onClick={() => handleOrder(item.id)}
-                          className="w-full py-3 px-4 bg-slate-900 hover:bg-amber-500 text-amber-300 hover:text-slate-950 rounded-xl text-xs font-bold border border-slate-800 hover:border-amber-400/40 transition-all flex items-center justify-center space-x-2 shadow-inner cursor-pointer"
+                          className="w-full py-2.5 px-4 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-lg text-xs font-bold shadow-stripe hover:shadow-stripe-hover transition-all flex items-center justify-center space-x-2 cursor-pointer border border-brand-primary"
                         >
                           {isLoading ? (
                             <>
-                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
                               <span>Sending...</span>
                             </>
                           ) : (
                             <>
                               <span>Order Now</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
+                              <ChevronRight className="w-3.5 h-3.5 text-white" />
                             </>
                           )}
                         </button>
@@ -806,12 +805,12 @@ function GuestView({ roomFromUrl }) {
       </div>
 
       {/* Custom Request Input Section with Voice Requests */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-4 shadow-2xl bg-slate-950/90">
+      <div className="bg-brand-card p-6 sm:p-8 rounded-2xl border border-brand-border space-y-4 shadow-stripe">
         <div className="flex items-center justify-between">
-          <label htmlFor="custom-item-input" className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
+          <label htmlFor="custom-item-input" className="text-xs font-bold uppercase tracking-wider text-brand-heading block">
             Custom In-Suite Request
           </label>
-          <span className="text-[11px] text-amber-400 font-semibold flex items-center gap-1.5">
+          <span className="text-[11px] text-brand-primary font-semibold flex items-center gap-1.5">
             <Mic className="w-3.5 h-3.5" /> Voice Input Supported
           </span>
         </div>
@@ -825,13 +824,13 @@ function GuestView({ roomFromUrl }) {
               value={customItem}
               onChange={(e) => setCustomItem(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleOrder(customItem)}
-              className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-xs sm:text-sm rounded-xl pl-4 pr-10 py-3.5 focus:outline-none focus:border-amber-500 transition-all"
+              className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-xs sm:text-sm rounded-lg pl-4 pr-10 py-3.5 focus:outline-none focus:border-brand-primary transition-all"
             />
             {customItem && (
               <button
                 type="button"
                 onClick={() => setCustomItem('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs font-bold cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-body hover:text-brand-heading text-xs font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -843,10 +842,10 @@ function GuestView({ roomFromUrl }) {
             id="voice-request-btn"
             type="button"
             onClick={toggleVoiceRecognition}
-            className={`px-4 py-3.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border transition-all shrink-0 cursor-pointer ${
+            className={`px-4 py-3.5 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border transition-all shrink-0 cursor-pointer ${
               isListening
                 ? 'bg-red-600 text-white border-red-400 animate-pulse shadow-lg shadow-red-600/40 ring-2 ring-red-500/50'
-                : 'bg-slate-900 hover:bg-slate-800 text-amber-400 border-slate-800 hover:border-amber-500/40'
+                : 'bg-brand-surface hover:bg-brand-surface/80 text-brand-primary border-brand-border'
             }`}
             title={isListening ? 'Click to stop listening' : 'Speak your request using voice'}
           >
@@ -857,7 +856,7 @@ function GuestView({ roomFromUrl }) {
               </>
             ) : (
               <>
-                <Mic className="w-4 h-4 text-amber-400" />
+                <Mic className="w-4 h-4 text-brand-primary" />
                 <span>Speak Request</span>
               </>
             )}
@@ -867,9 +866,9 @@ function GuestView({ roomFromUrl }) {
             id="request-custom-btn"
             disabled={!customItem.trim() || loadingItem === customItem}
             onClick={() => handleOrder(customItem)}
-            className="px-6 py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 disabled:bg-slate-900 disabled:text-slate-600 text-slate-950 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center space-x-2 shadow-lg shadow-amber-500/20 shrink-0 cursor-pointer border border-amber-300/30"
+            className="px-6 py-3.5 bg-brand-primary text-white shadow-stripe hover:shadow-stripe-hover disabled:bg-brand-surface disabled:text-slate-300 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center space-x-2 shrink-0 cursor-pointer border border-brand-border"
           >
-            <Send className="w-4 h-4 text-slate-950" />
+            <Send className="w-4 h-4 text-white" />
             <span>Submit Custom Request</span>
           </button>
         </div>
@@ -878,20 +877,20 @@ function GuestView({ roomFromUrl }) {
       {/* ==========================================================================
          MY REQUEST STATUS SECTION (Bottom of Guest View)
          ========================================================================== */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 shadow-2xl relative overflow-hidden bg-slate-950/90">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="bg-brand-card p-6 sm:p-8 rounded-2xl border border-brand-border space-y-6 shadow-stripe relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
               <Clock className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-serif text-white tracking-tight">Suite Active Request Status</h2>
-                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                <h2 className="text-xl text-brand-heading font-semibold tracking-tight">Suite Active Request Status</h2>
+                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-brand-surface text-brand-heading border border-brand-border">
                   {selectedRoom}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-brand-body mt-0.5">
                 Real-time tracking for all services requested in your suite
               </p>
             </div>
@@ -900,21 +899,21 @@ function GuestView({ roomFromUrl }) {
           <button
             id="refresh-guest-status-btn"
             onClick={fetchMyRequests}
-            className="p-2.5 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 transition-all text-xs font-bold flex items-center space-x-2 self-start sm:self-center shadow-md cursor-pointer"
+            className="p-2.5 px-4 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-bold flex items-center space-x-2 self-start sm:self-center shadow-stripe cursor-pointer"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+            <RefreshCw className="w-3.5 h-3.5 text-brand-primary" />
             <span>Refresh Status</span>
           </button>
         </div>
 
         {/* Requests List */}
         {myRequests.length === 0 ? (
-          <div className="text-center py-12 space-y-3 bg-slate-900/40 rounded-2xl border border-slate-800 p-8">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
-              <ShieldCheck className="w-7 h-7 text-slate-600" />
+          <div className="text-center py-12 space-y-3 bg-brand-surface rounded-xl border border-brand-border p-8">
+            <div className="w-14 h-14 mx-auto rounded-xl bg-brand-card border border-brand-border flex items-center justify-center text-brand-body">
+              <ShieldCheck className="w-7 h-7 text-brand-body" />
             </div>
-            <p className="text-sm font-semibold text-slate-300">No active requests for Suite {selectedRoom}</p>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-sm font-semibold text-brand-heading">No active requests for Suite {selectedRoom}</p>
+            <p className="text-xs text-brand-body max-w-sm mx-auto">
               Any item or service requested above will appear here in real time with live status updates.
             </p>
           </div>
@@ -930,49 +929,49 @@ function GuestView({ roomFromUrl }) {
               return (
                 <div
                   key={req.id || idx}
-                  className={`glass-card p-6 rounded-2xl border flex flex-col justify-between space-y-5 transition-all duration-300 animate-slide-up ${
+                  className={`bg-brand-card border rounded-xl p-6 flex flex-col justify-between space-y-5 shadow-stripe transition-all duration-300 animate-slide-up ${
                     isEmergency
-                      ? 'border-2 border-red-500 bg-gradient-to-br from-red-950 via-slate-950 to-red-950 shadow-xl shadow-red-950/50 animate-pulse'
+                      ? 'border-brand-accent'
                       : isPending
-                      ? 'border-amber-500/40 bg-slate-900/90 shadow-lg shadow-amber-500/5'
+                      ? 'border-brand-border'
                       : isOnTheWay
-                      ? 'border-amber-500/40 bg-slate-900/90'
-                      : 'border-emerald-500/30 bg-slate-950/60'
+                      ? 'border-brand-border'
+                      : 'border-brand-secondary/30'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <span className={`text-[10px] font-bold tracking-widest uppercase ${isEmergency ? 'text-red-400' : 'text-amber-400'}`}>
+                      <span className={`text-[10px] font-bold tracking-widest uppercase ${isEmergency ? 'text-brand-accent' : 'text-brand-primary'}`}>
                         Order #{req.id || idx + 1}
                       </span>
-                      <h3 className={`text-base font-serif font-bold mt-1 ${isEmergency ? 'text-red-200' : 'text-white'}`}>{req.item_requested}</h3>
+                      <h3 className={`text-base font-sans font-semibold mt-1 ${isEmergency ? 'text-brand-accent' : 'text-brand-heading'}`}>{req.item_requested}</h3>
                     </div>
 
                     {/* Status Badge */}
                     <span
-                      className={`px-3 py-1 rounded-full text-[11px] font-bold border flex items-center space-x-1.5 shrink-0 ${
+                      className={`px-3 py-1 rounded-full text-[11px] font-semibold border flex items-center space-x-1.5 shrink-0 ${
                         isEmergency
-                          ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse'
+                          ? 'bg-brand-accent text-white border-none'
                           : isPending
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                          ? 'bg-brand-surface text-brand-body border-brand-border'
                           : isOnTheWay
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                          ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 animate-pulse'
+                          : 'bg-brand-secondary/15 text-brand-secondary border-brand-secondary/30'
                       }`}
                     >
                       {isPending ? (
                         <>
-                          <Clock className="w-3.5 h-3.5 text-amber-400" />
+                          <Clock className="w-3.5 h-3.5 text-brand-primary" />
                           <span>Pending</span>
                         </>
                       ) : isOnTheWay ? (
                         <>
-                          <Truck className="w-3.5 h-3.5 text-amber-400" />
+                          <Truck className="w-3.5 h-3.5 text-brand-primary animate-pulse" />
                           <span>On the Way</span>
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-brand-secondary" />
                           <span>Delivered</span>
                         </>
                       )}
@@ -980,21 +979,21 @@ function GuestView({ roomFromUrl }) {
                   </div>
 
                   {/* Status Progress Bar */}
-                  <div className="space-y-2 pt-2 border-t border-slate-800/80">
-                    <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden flex border border-slate-800">
+                  <div className="space-y-2 pt-2 border-t border-brand-border">
+                    <div className="w-full bg-brand-surface h-2 rounded-full overflow-hidden flex border border-brand-border">
                       <div
                         className={`h-full transition-all duration-500 ${
                           isEmergency
-                            ? 'w-full bg-red-500 animate-pulse'
+                            ? 'w-full bg-brand-accent'
                             : isPending
-                            ? 'w-1/3 bg-amber-400'
+                            ? 'w-1/3 bg-brand-primary/40'
                             : isOnTheWay
-                            ? 'w-2/3 bg-amber-500'
-                            : 'w-full bg-emerald-400'
+                            ? 'w-2/3 bg-brand-primary'
+                            : 'w-full bg-brand-secondary'
                         }`}
                       ></div>
                     </div>
-                    <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                    <div className="flex justify-between text-[10px] text-brand-body font-mono">
                       <span>Received</span>
                       <span>En Route</span>
                       <span>Fulfilled</span>
@@ -1010,20 +1009,20 @@ function GuestView({ roomFromUrl }) {
       {/* ==========================================================================
          RATE YOUR STAY SECTION (5-Star Guest Feedback)
          ========================================================================== */}
-      <div className="glass-panel p-6 sm:p-10 rounded-3xl border border-slate-800 space-y-6 shadow-2xl relative overflow-hidden bg-slate-950/90">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="bg-brand-card p-6 sm:p-10 rounded-2xl border border-brand-border space-y-6 shadow-stripe relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
-              <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
+              <Star className="w-6 h-6 fill-brand-primary text-brand-primary" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-serif text-white tracking-tight">Rate Your Stay</h2>
-                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                <h2 className="text-xl text-brand-heading font-semibold tracking-tight">Rate Your Stay</h2>
+                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-brand-surface text-brand-body border border-brand-border">
                   5-Star Feedback
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-brand-body mt-0.5">
                 We value your experience. Help us maintain our highest standards of luxury hospitality.
               </p>
             </div>
@@ -1031,14 +1030,14 @@ function GuestView({ roomFromUrl }) {
         </div>
 
         {reviewSubmitted ? (
-          <div className="p-8 rounded-2xl bg-slate-900/90 border border-amber-500/30 text-center space-y-4 animate-fade-in">
-            <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-xl shadow-amber-500/20">
-              <CheckCircle2 className="w-9 h-9 text-amber-400" />
+          <div className="p-8 rounded-xl bg-brand-surface border border-brand-border text-center space-y-4 animate-fade-in">
+            <div className="w-16 h-16 mx-auto rounded-full bg-brand-secondary/15 border border-brand-secondary/25 flex items-center justify-center text-brand-secondary shadow-stripe">
+              <CheckCircle2 className="w-9 h-9 text-brand-secondary" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-serif font-bold text-white">Thank You for Your Feedback!</h3>
-              <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                Your response for Suite <span className="text-amber-400 font-bold">{selectedRoom}</span> has been submitted to resort management. We appreciate your valuable insights.
+              <h3 className="text-xl text-brand-heading font-semibold">Thank You for Your Feedback!</h3>
+              <p className="text-sm text-brand-body max-w-md mx-auto leading-relaxed">
+                Your response for Suite <span className="text-brand-heading font-semibold">{selectedRoom}</span> has been submitted to resort management. We appreciate your valuable insights.
               </p>
             </div>
 
@@ -1048,15 +1047,15 @@ function GuestView({ roomFromUrl }) {
                   key={star}
                   className={`w-6 h-6 ${
                     star <= reviewRating
-                      ? 'text-amber-400 fill-amber-400'
-                      : 'text-slate-700 fill-transparent'
+                      ? 'text-brand-accent fill-brand-accent'
+                      : 'text-slate-200 fill-transparent'
                   }`}
                 />
               ))}
             </div>
 
             {reviewComment && (
-              <div className="max-w-lg mx-auto p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-xs text-slate-300 italic">
+              <div className="max-w-lg mx-auto p-4 bg-white rounded-xl border border-brand-border text-xs text-brand-body italic">
                 "{reviewComment}"
               </div>
             )}
@@ -1067,7 +1066,7 @@ function GuestView({ roomFromUrl }) {
                 setReviewSubmitted(false);
                 setReviewComment('');
               }}
-              className="mt-4 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-xl border border-slate-700 transition-all cursor-pointer"
+              className="mt-4 px-5 py-2.5 bg-brand-surface hover:bg-brand-surface/80 text-brand-heading text-xs font-semibold rounded-lg border border-brand-border transition-all cursor-pointer"
             >
               Submit Another Rating
             </button>
@@ -1075,8 +1074,8 @@ function GuestView({ roomFromUrl }) {
         ) : (
           <form onSubmit={handleSubmitReview} className="space-y-6">
             {/* Interactive Star Rating Selector */}
-            <div className="flex flex-col items-center justify-center p-6 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+            <div className="flex flex-col items-center justify-center p-6 bg-brand-surface rounded-xl border border-brand-border space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-heading">
                 Select Star Rating
               </span>
               <div className="flex items-center space-x-2">
@@ -1096,15 +1095,15 @@ function GuestView({ roomFromUrl }) {
                       <Star
                         className={`w-9 h-9 transition-colors duration-150 ${
                           active
-                            ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]'
-                            : 'text-slate-600 fill-transparent hover:text-amber-300/50'
+                            ? 'text-brand-accent fill-brand-accent'
+                            : 'text-slate-300 fill-transparent hover:text-brand-accent/50'
                         }`}
                       />
                     </button>
                   );
                 })}
               </div>
-              <span className="text-xs font-bold text-amber-400 font-serif">
+              <span className="text-xs font-semibold text-brand-primary">
                 {reviewHoverRating || reviewRating} / 5 Stars —{' '}
                 {(reviewHoverRating || reviewRating) === 5
                   ? 'Exceptional'
@@ -1120,7 +1119,7 @@ function GuestView({ roomFromUrl }) {
 
             {/* Comment Textarea */}
             <div className="space-y-2">
-              <label htmlFor="review-comment-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+              <label htmlFor="review-comment-textarea" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
                 Guest Experience Comments (Optional)
               </label>
               <textarea
@@ -1129,7 +1128,7 @@ function GuestView({ roomFromUrl }) {
                 placeholder="Tell us about your room comfort, staff responsiveness, or overall experience..."
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-xs sm:text-sm rounded-2xl p-4 focus:outline-none focus:border-amber-500 transition-all resize-none"
+                className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-xs sm:text-sm rounded-xl p-4 focus:outline-none focus:border-brand-primary transition-all resize-none"
               />
             </div>
 
@@ -1139,16 +1138,16 @@ function GuestView({ roomFromUrl }) {
                 id="submit-review-btn"
                 type="submit"
                 disabled={reviewSubmitting || !reviewRating}
-                className="px-7 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 disabled:opacity-50 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-amber-500/20 border border-amber-300/40 transition-all flex items-center space-x-2 cursor-pointer"
+                className="px-7 py-3.5 bg-brand-primary text-white shadow-stripe hover:shadow-stripe-hover disabled:opacity-50 font-semibold text-xs sm:text-sm rounded-lg border border-brand-border transition-all flex items-center space-x-2 cursor-pointer animate-fade-in"
               >
                 {reviewSubmitting ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
                     <span>Submitting Feedback...</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4 text-slate-950" />
+                    <Send className="w-4 h-4 text-white" />
                     <span>Submit Feedback</span>
                   </>
                 )}
@@ -1287,46 +1286,46 @@ function WaiterView() {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Dashboard Top Header Bar */}
-      <div className="glass-panel p-8 rounded-3xl border border-slate-800 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-5 bg-slate-950/90">
+      <div className="bg-brand-card border border-brand-border p-8 rounded-2xl shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div>
           <div className="flex items-center space-x-3">
-            <h1 className="text-2xl sm:text-3xl font-serif text-white tracking-tight">Staff Operations &amp; Dispatch</h1>
+            <h1 className="text-2xl sm:text-3xl text-brand-heading font-semibold tracking-tight">Staff Operations &amp; Dispatch</h1>
             {newIncomingCount > 0 && (
-              <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-500 text-slate-950 animate-bounce shadow-md shadow-amber-500/20">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-brand-primary text-white shadow-stripe animate-bounce">
                 +{newIncomingCount} New
               </span>
             )}
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">Accept &amp; fulfill live incoming guest orders via real-time WebSocket telemetry</p>
+          <p className="text-xs sm:text-sm text-brand-body mt-1">Accept &amp; fulfill live incoming guest orders via real-time WebSocket telemetry</p>
         </div>
 
         {/* Live WS Connection Status Badge */}
         <div className="flex items-center space-x-3">
           <div
-            className={`px-4 py-2 rounded-full border text-xs font-bold flex items-center space-x-2 backdrop-blur-md ${
+            className={`px-4 py-1.5 rounded-lg border text-xs font-semibold flex items-center space-x-2 ${
               wsStatus === 'CONNECTED'
-                ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/30'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 : wsStatus === 'CONNECTING'
-                ? 'bg-amber-950/80 text-amber-400 border-amber-500/30'
-                : 'bg-red-950/80 text-red-400 border-red-500/30'
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-red-50 text-red-700 border-red-200'
             }`}
           >
             {wsStatus === 'CONNECTED' ? (
               <>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 glow-green animate-pulse"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-brand-secondary animate-pulse"></span>
                 <span>Telemetry Connected</span>
-                <Wifi className="w-3.5 h-3.5 ml-1" />
+                <Wifi className="w-3.5 h-3.5 ml-1 text-brand-secondary" />
               </>
             ) : wsStatus === 'CONNECTING' ? (
               <>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 glow-amber animate-spin"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-brand-accent animate-spin"></span>
                 <span>Connecting...</span>
               </>
             ) : (
               <>
-                <span className="w-2.5 h-2.5 rounded-full bg-red-400 glow-red"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
                 <span>Disconnected</span>
-                <WifiOff className="w-3.5 h-3.5 ml-1" />
+                <WifiOff className="w-3.5 h-3.5 ml-1 text-red-500" />
               </>
             )}
           </div>
@@ -1337,10 +1336,10 @@ function WaiterView() {
               fetchRequests();
               connectWebSocket();
             }}
-            className="p-2.5 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 transition-all text-xs font-bold flex items-center space-x-1.5 shadow-md cursor-pointer"
+            className="p-2 px-4 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-stripe cursor-pointer"
             title="Reconnect WebSocket"
           >
-            <RefreshCw className="w-4 h-4 text-amber-400" />
+            <RefreshCw className="w-4 h-4 text-brand-primary" />
             <span className="hidden sm:inline">Sync Data</span>
           </button>
         </div>
@@ -1348,78 +1347,78 @@ function WaiterView() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
-        <div className="glass-card p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl shadow-stripe flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders</span>
-            <div className="text-3xl font-black text-white mt-1">{requests.length}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-body">Total Orders</span>
+            <div className="text-3xl font-bold text-brand-heading mt-1">{requests.length}</div>
           </div>
-          <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+          <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
             <BellRing className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="glass-card p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl shadow-stripe flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Pending</span>
-            <div className="text-3xl font-black text-amber-300 mt-1">{pendingCount}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-body">Pending</span>
+            <div className="text-3xl font-bold text-brand-heading mt-1">{pendingCount}</div>
           </div>
-          <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+          <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
             <Clock className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="glass-card p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl shadow-stripe flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-300">On the Way</span>
-            <div className="text-3xl font-black text-amber-200 mt-1">{onTheWayCount}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-body">On the Way</span>
+            <div className="text-3xl font-bold text-brand-primary mt-1">{onTheWayCount}</div>
           </div>
-          <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-2xl">
-            <Truck className="w-6 h-6" />
+          <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
+            <Truck className="w-6 h-6 animate-pulse" />
           </div>
         </div>
 
-        <div className="glass-card p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl shadow-stripe flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Delivered</span>
-            <div className="text-3xl font-black text-emerald-300 mt-1">{deliveredCount}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-body">Delivered</span>
+            <div className="text-3xl font-bold text-brand-secondary mt-1">{deliveredCount}</div>
           </div>
-          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl">
+          <div className="p-3 bg-brand-surface border border-brand-border text-brand-secondary rounded-xl">
             <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+      <div className="flex items-center justify-between border-b border-brand-border pb-4">
         <div className="flex space-x-3">
           {['ALL', 'Pending', 'On the Way', 'Delivered'].map((tab) => (
             <button
               key={tab}
               id={`filter-tab-${tab.toLowerCase().replace(/\s+/g, '-')}`}
               onClick={() => setFilter(tab)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer ${
                 filter === tab
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-400/40'
-                  : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
+                  ? 'bg-brand-primary text-white shadow-stripe'
+                  : 'bg-brand-card text-brand-body hover:text-brand-heading hover:bg-brand-surface border border-brand-border'
               }`}
             >
               {tab}
             </button>
           ))}
         </div>
-        <span className="text-xs text-slate-500 font-mono hidden sm:inline">
+        <span className="text-xs text-brand-body font-mono hidden sm:inline">
           Showing {filteredRequests.length} of {requests.length} active records
         </span>
       </div>
 
       {/* Incoming Requests Feed List */}
       {filteredRequests.length === 0 ? (
-        <div className="glass-panel p-16 rounded-3xl text-center space-y-4 border border-slate-800 bg-slate-950/80">
-          <div className="w-16 h-16 mx-auto rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
-            <ConciergeBell className="w-8 h-8 text-amber-400/60" />
+        <div className="bg-brand-card border border-brand-border p-16 rounded-2xl text-center space-y-4 shadow-stripe animate-fade-in">
+          <div className="w-16 h-16 mx-auto rounded-xl bg-brand-surface border border-brand-border flex items-center justify-center text-brand-primary shadow-stripe">
+            <ConciergeBell className="w-8 h-8 text-brand-primary" />
           </div>
-          <h3 className="text-lg font-serif text-slate-200">No requests found</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+          <h3 className="text-lg font-semibold text-brand-heading">No requests found</h3>
+          <p className="text-xs text-brand-body max-w-sm mx-auto leading-relaxed">
             {requests.length === 0
               ? 'Listening for incoming room service requests over WebSocket telemetry...'
               : `No requests with status "${filter}".`}
@@ -1437,43 +1436,43 @@ function WaiterView() {
             return (
               <div
                 key={req.id || idx}
-                className={`glass-card p-6 rounded-2xl border flex flex-col justify-between space-y-5 transition-all duration-300 ${
+                className={`bg-brand-card border rounded-xl p-6 flex flex-col justify-between space-y-5 shadow-stripe transition-all duration-300 ${
                   isEmergency
-                    ? 'border-2 border-red-500 bg-gradient-to-br from-red-950 via-slate-950 to-red-950 shadow-2xl shadow-red-950/60 animate-pulse ring-2 ring-red-500/80 scale-[1.02]'
+                    ? 'border-brand-accent shadow-stripe scale-[1.02]'
                     : isPending
-                    ? 'border-amber-500/40 bg-slate-900/90 shadow-lg shadow-amber-500/5'
+                    ? 'border-brand-border'
                     : isOnTheWay
-                    ? 'border-amber-500/30 bg-slate-900/80'
-                    : 'border-slate-800 opacity-80 bg-slate-950/60'
+                    ? 'border-brand-border'
+                    : 'border-brand-border opacity-90'
                 }`}
               >
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className={`text-[11px] font-extrabold tracking-widest uppercase ${isEmergency ? 'text-red-400' : 'text-amber-400'}`}>
+                      <span className={`text-[11px] font-bold tracking-wider uppercase ${isEmergency ? 'text-brand-accent' : 'text-brand-primary'}`}>
                         Room {req.room_number}
                       </span>
                       {isEmergency && (
-                        <span className="px-2.5 py-0.5 text-[9px] font-extrabold bg-red-600 text-white rounded-full animate-bounce shadow-md shadow-red-600/50 flex items-center gap-1">
-                          <Siren className="w-3 h-3 text-white" /> EMERGENCY SOS
+                        <span className="px-2 py-0.5 text-[9px] font-semibold bg-red-100 text-red-800 border border-red-200 rounded-lg animate-pulse flex items-center gap-1">
+                          <Siren className="w-3 h-3 text-red-500" /> EMERGENCY
                         </span>
                       )}
                     </div>
-                    <h3 className={`text-lg font-serif font-bold mt-1 ${isEmergency ? 'text-red-200 font-black' : 'text-white'}`}>
+                    <h3 className={`text-lg font-sans font-semibold mt-1 ${isEmergency ? 'text-brand-accent' : 'text-brand-heading'}`}>
                       {req.item_requested}
                     </h3>
                   </div>
 
                   <span
-                    className={`px-3 py-1 rounded-full text-[10px] font-extrabold border uppercase tracking-wider shrink-0 ${
+                    className={`px-3 py-0.5 rounded-md text-[10px] font-semibold border uppercase tracking-wider shrink-0 ${
                       isEmergency
-                        ? 'bg-red-500/20 text-red-300 border-red-500/50 animate-pulse'
+                        ? 'bg-brand-accent text-white border-none'
                         : isPending
-                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                        ? 'bg-brand-surface text-brand-body border-brand-border'
                         : isOnTheWay
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 animate-pulse'
+                        : 'bg-brand-secondary/15 text-brand-secondary border-brand-secondary/30'
                     }`}
                   >
                     {status}
@@ -1481,10 +1480,10 @@ function WaiterView() {
                 </div>
 
                 {/* Footer details & Action status switcher buttons */}
-                <div className="pt-4 border-t border-slate-800/80 flex flex-col gap-3.5">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
+                <div className="pt-4 border-t border-brand-border flex flex-col gap-3.5">
+                  <div className="flex items-center justify-between text-xs text-brand-body">
                     <span className="font-mono text-[11px]">Request ID: #{req.id || idx + 1}</span>
-                    <span className="text-[11px] font-bold text-slate-300">Dispatch Action:</span>
+                    <span className="text-[11px] font-bold text-brand-heading">Dispatch Action:</span>
                   </div>
 
                   {/* PROMINENT ACTION BUTTONS */}
@@ -1493,12 +1492,12 @@ function WaiterView() {
                       id={`accept-btn-${req.id || idx}`}
                       disabled={isOnTheWay || isDelivered}
                       onClick={() => updateRequestStatus(req.id, 'On the Way')}
-                      className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 border cursor-pointer ${
+                      className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 border cursor-pointer ${
                         isOnTheWay
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 cursor-default'
+                          ? 'bg-brand-primary/20 text-brand-primary border border-brand-primary/30 cursor-default'
                           : isDelivered
-                          ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
-                          : 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 border-amber-300/40 shadow-lg shadow-amber-500/20 active:scale-95'
+                          ? 'bg-brand-surface text-slate-300 border border-brand-border cursor-not-allowed opacity-50'
+                          : 'bg-brand-primary hover:bg-brand-primary/95 text-white border border-brand-primary shadow-stripe hover:shadow-stripe-hover active:scale-[0.98]'
                       }`}
                     >
                       <Truck className="w-4 h-4" />
@@ -1509,10 +1508,10 @@ function WaiterView() {
                       id={`complete-btn-${req.id || idx}`}
                       disabled={isDelivered}
                       onClick={() => updateRequestStatus(req.id, 'Delivered')}
-                      className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 border cursor-pointer ${
+                      className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 border cursor-pointer ${
                         isDelivered
-                          ? 'bg-emerald-600/30 text-emerald-300 border-emerald-500/40 cursor-default'
-                          : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border-emerald-400/40 shadow-lg shadow-emerald-600/25 active:scale-95'
+                          ? 'bg-brand-secondary/20 text-brand-secondary border border-brand-secondary/30 cursor-default'
+                          : 'bg-brand-secondary hover:bg-brand-secondary/95 text-white border border-brand-secondary shadow-stripe hover:shadow-stripe-hover active:scale-[0.98]'
                       }`}
                     >
                       <CheckCircle2 className="w-4 h-4" />
@@ -2007,29 +2006,29 @@ function ManagerView() {
   return (
     <div className="space-y-10 animate-fade-in">
       {/* Header Banner */}
-      <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-800 shadow-2xl bg-slate-950/90 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center space-x-3">
-            <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1.5">
-              <Crown className="w-3.5 h-3.5 text-amber-400" />
+            <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase bg-brand-surface text-brand-primary border border-brand-border flex items-center space-x-1.5">
+              <Crown className="w-3.5 h-3.5 text-brand-primary" />
               <span>Manager Overview</span>
             </span>
             <span
               className={`px-3 py-1 rounded-full text-[11px] font-bold border flex items-center space-x-1.5 ${
                 wsStatus === 'CONNECTED'
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
               <span>{wsStatus === 'CONNECTED' ? 'Live Telemetry' : 'Connecting'}</span>
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-serif text-white tracking-tight mt-3">
+          <h1 className="text-2xl sm:text-3xl text-brand-heading font-semibold tracking-tight mt-3">
             Executive Manager Dashboard
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">
+          <p className="text-xs sm:text-sm text-brand-body mt-1 leading-relaxed">
             Top-level operational telemetry, room QR code dispatching &amp; live activity stream
           </p>
         </div>
@@ -2041,9 +2040,9 @@ function ManagerView() {
             fetchReviews();
             connectWebSocket();
           }}
-          className="p-3 px-5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-200 transition-all text-xs font-bold flex items-center space-x-2 self-start md:self-center shadow-lg cursor-pointer"
+          className="p-2 px-5 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-semibold flex items-center space-x-2 self-start md:self-center shadow-stripe cursor-pointer"
         >
-          <RefreshCw className="w-4 h-4 text-amber-400" />
+          <RefreshCw className="w-4 h-4 text-brand-primary" />
           <span>Refresh Analytics</span>
         </button>
       </div>
@@ -2051,71 +2050,71 @@ function ManagerView() {
       {/* Top-Level Analytics Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Metric 1: Total Orders */}
-        <div className="glass-card p-8 rounded-3xl border border-slate-800 bg-slate-950/90 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl shadow-stripe relative overflow-hidden transition-all duration-300 hover:border-brand-primary/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders</span>
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl shadow-md">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-body">Total Orders</span>
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
               <BarChart3 className="w-6 h-6" />
             </div>
           </div>
           <div className="mt-5">
-            <div className="text-4xl font-black text-white tracking-tight">{totalOrders}</div>
-            <div className="flex items-center space-x-1.5 mt-2 text-xs text-amber-400 font-medium">
-              <TrendingUp className="w-4 h-4" />
+            <div className="text-3xl font-bold text-brand-heading tracking-tight">{totalOrders}</div>
+            <div className="flex items-center space-x-1.5 mt-2 text-xs text-brand-body font-medium">
+              <TrendingUp className="w-4 h-4 text-brand-primary" />
               <span>All requests logged across resort</span>
             </div>
           </div>
         </div>
 
         {/* Metric 2: Pending Orders */}
-        <div className="glass-card p-8 rounded-3xl border border-slate-800 bg-slate-950/90 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl shadow-stripe relative overflow-hidden transition-all duration-300 hover:border-brand-primary/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Pending Orders</span>
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl shadow-md">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-body">Pending Orders</span>
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
               <Clock className="w-6 h-6" />
             </div>
           </div>
           <div className="mt-5">
-            <div className="text-4xl font-black text-amber-300 tracking-tight">{pendingOrders}</div>
-            <div className="flex items-center space-x-1.5 mt-2 text-xs text-amber-400/80 font-medium">
-              <Activity className="w-4 h-4" />
+            <div className="text-3xl font-bold text-brand-heading tracking-tight">{pendingOrders}</div>
+            <div className="flex items-center space-x-1.5 mt-2 text-xs text-brand-body font-medium">
+              <Activity className="w-4 h-4 text-brand-primary" />
               <span>Awaiting staff acceptance</span>
             </div>
           </div>
         </div>
 
         {/* Metric 3: Completed Orders */}
-        <div className="glass-card p-8 rounded-3xl border border-slate-800 bg-slate-950/90 shadow-xl relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl shadow-stripe relative overflow-hidden transition-all duration-300 hover:border-brand-primary/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Completed Orders</span>
-            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-2xl shadow-md">
-              <CheckCircle2 className="w-6 h-6" />
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-body">Completed Orders</span>
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-secondary rounded-xl">
+              <CheckCircle2 className="w-6 h-6 text-brand-secondary" />
             </div>
           </div>
           <div className="mt-5">
-            <div className="text-4xl font-black text-emerald-300 tracking-tight">{completedOrders}</div>
-            <div className="flex items-center space-x-1.5 mt-2 text-xs text-emerald-400/80 font-medium">
-              <Check className="w-4 h-4" />
+            <div className="text-3xl font-bold text-brand-secondary tracking-tight">{completedOrders}</div>
+            <div className="flex items-center space-x-1.5 mt-2 text-xs text-brand-body font-medium">
+              <Check className="w-4 h-4 text-brand-secondary" />
               <span>Successfully delivered to suites</span>
             </div>
           </div>
         </div>
 
         {/* Metric 4: Average Guest Rating */}
-        <div className="glass-card p-8 rounded-3xl border border-slate-800 bg-slate-950/90 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
+        <div className="bg-brand-card border border-brand-border p-6 rounded-xl shadow-stripe relative overflow-hidden transition-all duration-300 hover:border-brand-primary/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Avg Guest Rating</span>
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl shadow-md">
-              <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-body">Avg Guest Rating</span>
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
+              <Star className="w-6 h-6 fill-brand-primary text-brand-primary" />
             </div>
           </div>
           <div className="mt-5">
             <div className="flex items-baseline space-x-1.5">
-              <span className="text-4xl font-black text-white tracking-tight">{avgRating}</span>
-              <span className="text-sm font-bold text-slate-400">/ 5.0</span>
+              <span className="text-3xl font-bold text-brand-heading tracking-tight">{avgRating}</span>
+              <span className="text-sm font-semibold text-brand-body">/ 5.0</span>
             </div>
-            <div className="flex items-center space-x-1.5 mt-2 text-xs text-amber-400 font-medium">
-              <Award className="w-4 h-4 text-amber-400" />
+            <div className="flex items-center space-x-1.5 mt-2 text-xs text-brand-body font-medium">
+              <Award className="w-4 h-4 text-brand-primary" />
               <span>Based on {reviews.length} guest review{reviews.length !== 1 ? 's' : ''}</span>
             </div>
           </div>
@@ -2123,34 +2122,34 @@ function ManagerView() {
       </div>
 
       {/* Room QR Generator Section with Single & Bulk Toggle */}
-      <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-800 space-y-8 shadow-2xl bg-slate-950/90">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border space-y-8 shadow-stripe">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
           <div className="flex items-center space-x-4">
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
               <QrCode className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center space-x-2.5">
-                <h2 className="text-2xl font-serif text-white tracking-tight">Room QR Generator &amp; Bulk Print</h2>
-                <span className="px-3 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+                <h2 className="text-2xl text-brand-heading font-semibold tracking-tight">Room QR Generator &amp; Bulk Print</h2>
+                <span className="px-3 py-0.5 rounded-full text-[10px] font-bold bg-brand-surface text-brand-body border border-brand-border uppercase tracking-wider">
                   Table Tent Print
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-brand-body mt-0.5">
                 Generate and print individual or bulk ranges of QR codes for resort room table tents
               </p>
             </div>
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div className="flex items-center p-1.5 bg-slate-900 rounded-2xl border border-slate-800 shadow-inner self-start sm:self-center">
+          <div className="flex items-center p-1 bg-brand-surface rounded-xl border border-brand-border">
             <button
               id="qr-mode-single-btn"
               onClick={() => setQrMode('single')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 qrMode === 'single'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-brand-primary text-white shadow-stripe'
+                  : 'text-brand-body hover:text-brand-heading hover:bg-brand-card/50'
               }`}
             >
               <QrCode className="w-4 h-4" />
@@ -2160,10 +2159,10 @@ function ManagerView() {
             <button
               id="qr-mode-bulk-btn"
               onClick={() => setQrMode('bulk')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 qrMode === 'bulk'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-300/40'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-brand-primary text-white shadow-stripe'
+                  : 'text-brand-body hover:text-brand-heading hover:bg-brand-card/50'
               }`}
             >
               <Grid className="w-4 h-4" />
@@ -2178,7 +2177,7 @@ function ManagerView() {
             {/* Controls Column */}
             <div className="flex-1 space-y-5 w-full">
               <div>
-                <label htmlFor="qr-room-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                <label htmlFor="qr-room-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading mb-2">
                   Room / Suite Designation
                 </label>
                 <div className="relative max-w-sm">
@@ -2188,19 +2187,19 @@ function ManagerView() {
                     value={qrRoomNumber}
                     onChange={(e) => setQrRoomNumber(e.target.value)}
                     placeholder="e.g. Room 101, Villa 5"
-                    className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-bold transition-all"
+                    className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-2">
+                <p className="text-[11px] text-brand-body mt-2">
                   Enter any room identifier to update the encoded QR code preview.
                 </p>
               </div>
 
-              <div className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-2 max-w-md">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 block">
+              <div className="p-4 bg-brand-surface rounded-xl border border-brand-border space-y-2 max-w-md">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-primary block">
                   Encoded Guest Portal URL
                 </span>
-                <code className="text-xs text-slate-300 font-mono break-all block">
+                <code className="text-xs text-brand-body font-mono break-all block">
                   https://smartstaymhx.netlify.app/?room={encodeURIComponent(qrRoomNumber || '101')}
                 </code>
               </div>
@@ -2209,10 +2208,10 @@ function ManagerView() {
                 <button
                   id="qr-print-download-btn"
                   onClick={handlePrintQR}
-                  className="px-6 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-amber-500/20 flex items-center space-x-2 border border-amber-300/40 active:scale-95 cursor-pointer"
+                  className="px-6 py-3 bg-brand-primary text-white hover:opacity-90 rounded-lg text-xs font-semibold transition-all shadow-stripe hover:shadow-stripe-hover flex items-center space-x-2 border border-brand-border cursor-pointer active:scale-[0.98]"
                 >
-                  <Printer className="w-4 h-4 text-slate-950" />
-                  <Download className="w-4 h-4 ml-0.5 text-slate-950" />
+                  <Printer className="w-4 h-4 text-white" />
+                  <Download className="w-4 h-4 ml-0.5 text-white" />
                   <span>Print Single QR</span>
                 </button>
 
@@ -2220,17 +2219,17 @@ function ManagerView() {
                   id="checkout-room-btn"
                   disabled={checkoutLoading}
                   onClick={handleCheckoutRoom}
-                  className="px-6 py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-red-600/30 flex items-center space-x-2 border border-red-400/30 active:scale-95 cursor-pointer"
+                  className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-semibold transition-all shadow-stripe hover:shadow-stripe-hover flex items-center space-x-2 active:scale-[0.98] cursor-pointer"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4 text-red-500" />
                   <span>{checkoutLoading ? 'Processing Checkout...' : 'Checkout / Reset Room'}</span>
                 </button>
               </div>
             </div>
 
             {/* QR Code Display Column */}
-            <div className="flex flex-col items-center justify-center p-8 bg-slate-900/90 rounded-3xl border border-slate-800 shadow-inner shrink-0">
-              <div className="p-5 bg-white rounded-2xl shadow-2xl ring-4 ring-amber-500/20 border border-slate-200">
+            <div className="flex flex-col items-center justify-center p-8 bg-brand-surface rounded-2xl border border-brand-border shadow-stripe shrink-0">
+              <div className="p-5 bg-white rounded-2xl shadow-stripe ring-4 ring-brand-primary/10 border border-brand-border">
                 <QRCodeSVG
                   id="qr-code-svg"
                   value={`https://smartstaymhx.netlify.app/?room=${encodeURIComponent(qrRoomNumber || '101')}`}
@@ -2242,10 +2241,10 @@ function ManagerView() {
                 />
               </div>
               <div className="mt-4 text-center">
-                <span className="px-4 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-serif font-bold tracking-wide uppercase">
+                <span className="bg-white text-brand-heading border border-brand-border rounded-full text-xs font-semibold px-4 py-1">
                   {qrRoomNumber || '101'}
                 </span>
-                <p className="text-[10px] text-slate-400 mt-1">Scan to access guest portal</p>
+                <p className="text-[10px] text-brand-body mt-1">Scan to access guest portal</p>
               </div>
             </div>
           </div>
@@ -2255,7 +2254,7 @@ function ManagerView() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {/* Prefix Field */}
               <div>
-                <label htmlFor="bulk-prefix-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                <label htmlFor="bulk-prefix-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading mb-2">
                   Room Prefix
                 </label>
                 <input
@@ -2264,16 +2263,16 @@ function ManagerView() {
                   value={bulkPrefix}
                   onChange={(e) => setBulkPrefix(e.target.value)}
                   placeholder='e.g. "Room " or "Villa "'
-                  className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-bold transition-all"
+                  className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-brand-body mt-1">
                   Prefix text prepended to each room number.
                 </p>
               </div>
 
               {/* Start Number Field */}
               <div>
-                <label htmlFor="bulk-start-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                <label htmlFor="bulk-start-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading mb-2">
                   Start Number
                 </label>
                 <input
@@ -2282,16 +2281,16 @@ function ManagerView() {
                   value={bulkStart}
                   onChange={(e) => setBulkStart(e.target.value)}
                   placeholder="101"
-                  className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-bold transition-all"
+                  className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-brand-body mt-1">
                   Starting numerical room number.
                 </p>
               </div>
 
               {/* End Number Field */}
               <div>
-                <label htmlFor="bulk-end-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                <label htmlFor="bulk-end-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading mb-2">
                   End Number
                 </label>
                 <input
@@ -2300,21 +2299,21 @@ function ManagerView() {
                   value={bulkEnd}
                   onChange={(e) => setBulkEnd(e.target.value)}
                   placeholder="120"
-                  className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-bold transition-all"
+                  className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-brand-body mt-1">
                   Ending numerical room number.
                 </p>
               </div>
             </div>
 
             {/* Summary & Action Bar */}
-            <div className="p-5 bg-slate-900/90 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-5 bg-brand-surface rounded-xl border border-brand-border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-stripe">
               <div className="flex items-center space-x-3">
-                <span className="px-3.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold">
+                <span className="bg-white text-brand-heading border border-brand-border rounded-full text-xs font-bold px-3.5 py-1">
                   {bulkCalculatedCount > 0 ? `${bulkCalculatedCount} QR Codes` : 'Invalid Range'}
                 </span>
-                <p className="text-xs text-slate-300 font-medium">
+                <p className="text-xs text-brand-body font-medium">
                   {bulkCalculatedCount > 0
                     ? `Generating "${bulkPrefix}${bulkStart}" through "${bulkPrefix}${bulkEnd}"`
                     : 'Set a valid range to enable bulk printing'}
@@ -2325,10 +2324,10 @@ function ManagerView() {
                 id="bulk-print-all-btn"
                 disabled={bulkCalculatedCount <= 0}
                 onClick={handlePrintBulkQR}
-                className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 disabled:bg-slate-900 disabled:text-slate-600 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-xl shadow-amber-500/20 flex items-center justify-center space-x-2 border border-amber-300/40 active:scale-95 cursor-pointer shrink-0"
+                className="px-7 py-3.5 bg-brand-primary text-white shadow-stripe hover:shadow-stripe-hover disabled:bg-brand-surface disabled:text-slate-300 rounded-lg text-xs font-semibold transition-all flex items-center justify-center space-x-2 border border-brand-border cursor-pointer shrink-0"
               >
-                <Printer className="w-4 h-4 text-slate-950" />
-                <Grid className="w-4 h-4 text-slate-950 ml-0.5" />
+                <Printer className="w-4 h-4 text-white" />
+                <Grid className="w-4 h-4 text-white ml-0.5" />
                 <span>Print All QRs ({bulkCalculatedCount})</span>
               </button>
             </div>
@@ -2337,36 +2336,36 @@ function ManagerView() {
       </div>
 
       {/* Live Feed of Hotel Activity */}
-      <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-800 space-y-6 shadow-2xl bg-slate-950/90">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl space-y-6 shadow-stripe">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
               <Activity className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-serif text-white tracking-tight">Live Resort Telemetry Stream</h2>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <h2 className="text-xl text-brand-heading font-semibold tracking-tight">Live Resort Telemetry Stream</h2>
+                <span className="w-2.5 h-2.5 rounded-full bg-brand-secondary animate-pulse"></span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-brand-body mt-0.5">
                 Real-time activity stream of guest service requests &amp; staff status updates
               </p>
             </div>
           </div>
 
-          <span className="text-xs text-slate-500 font-mono">
+          <span className="text-xs text-brand-body font-mono">
             {requests.length} active database records
           </span>
         </div>
 
         {/* Live Hotel Requests Activity List */}
         {requests.length === 0 ? (
-          <div className="text-center py-12 space-y-3 bg-slate-900/40 rounded-2xl border border-slate-800 p-8">
-            <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
-              <Layers3 className="w-6 h-6 text-slate-600" />
+          <div className="text-center py-12 space-y-3 bg-brand-surface rounded-xl border border-brand-border p-8">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-brand-card border border-brand-border flex items-center justify-center text-brand-body">
+              <Layers3 className="w-6 h-6 text-brand-body" />
             </div>
-            <p className="text-sm font-semibold text-slate-300">No resort activity recorded yet</p>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-sm font-semibold text-brand-heading">No resort activity recorded yet</p>
+            <p className="text-xs text-brand-body max-w-sm mx-auto">
               Any order placed by guests or updated by waiters will instantly show up in this live feed.
             </p>
           </div>
@@ -2376,33 +2375,32 @@ function ManagerView() {
               const status = normalizeStatus(req.status);
               const isPending = status === 'Pending';
               const isOnTheWay = status === 'On the Way';
-              const isDelivered = status === 'Delivered';
               const isEmergency = (req.item_requested || '').toUpperCase().includes('EMERGENCY');
 
               return (
                 <div
                   key={req.id || idx}
-                  className={`p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition-all ${
+                  className={`p-5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition-all shadow-stripe bg-brand-card ${
                     isEmergency
-                      ? 'bg-red-950/40 border-red-500/60 text-red-100 shadow-md shadow-red-950/40 animate-pulse'
+                      ? 'border-brand-accent text-brand-accent animate-pulse'
                       : isPending
-                      ? 'bg-slate-900/90 border-slate-800 hover:border-amber-500/40'
+                      ? 'border-brand-border text-brand-body hover:border-brand-primary/20'
                       : isOnTheWay
-                      ? 'bg-slate-900/90 border-slate-800 hover:border-amber-500/30'
-                      : 'bg-slate-950/60 border-slate-900 text-slate-400'
+                      ? 'border-brand-border text-brand-body hover:border-brand-primary/20'
+                      : 'border-brand-border text-brand-body opacity-80'
                   }`}
                 >
                   <div className="flex items-center space-x-4">
                     {/* Icon indicator */}
                     <div
-                      className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 font-bold ${
+                      className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 font-bold border ${
                         isEmergency
-                          ? 'bg-red-600 text-white'
+                          ? 'bg-brand-accent text-white border-none'
                           : isPending
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          ? 'bg-brand-surface text-brand-body border-brand-border'
                           : isOnTheWay
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-brand-surface text-brand-primary border-brand-border animate-pulse'
+                          : 'bg-brand-surface text-brand-secondary border-brand-secondary/30'
                       }`}
                     >
                       {isEmergency ? (
@@ -2418,12 +2416,12 @@ function ManagerView() {
 
                     <div>
                       <div className="flex items-center space-x-2.5">
-                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-slate-800 text-amber-400 border border-slate-700">
+                        <span className="px-2.5 py-0.5 rounded bg-brand-surface text-brand-primary border border-brand-border text-[10px] font-bold uppercase">
                           {req.room_number}
                         </span>
-                        <span className="text-xs font-mono text-slate-500">ID #{req.id || idx + 1}</span>
+                        <span className="text-xs font-mono text-brand-body">ID #{req.id || idx + 1}</span>
                       </div>
-                      <h4 className="text-base font-serif font-bold text-white mt-1">
+                      <h4 className="text-base font-sans font-semibold text-brand-heading mt-1">
                         {req.item_requested}
                       </h4>
                     </div>
@@ -2432,14 +2430,14 @@ function ManagerView() {
                   {/* Right side: Status Badge */}
                   <div className="flex items-center space-x-3 self-end sm:self-center">
                     <span
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border flex items-center space-x-1.5 ${
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center space-x-1.5 ${
                         isEmergency
-                          ? 'bg-red-500/20 text-red-300 border-red-500/50 animate-pulse'
+                          ? 'bg-brand-accent text-white border-none'
                           : isPending
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                          ? 'bg-brand-surface text-brand-body border-brand-border'
                           : isOnTheWay
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                          ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 animate-pulse'
+                          : 'bg-brand-secondary/15 text-brand-secondary border-brand-secondary/30'
                       }`}
                     >
                       <span>{status}</span>
@@ -2453,20 +2451,20 @@ function ManagerView() {
       </div>
 
       {/* Guest Feedback & Reviews Section */}
-      <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-800 space-y-6 shadow-2xl bg-slate-950/90">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl space-y-6 shadow-stripe">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
-              <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
+              <Star className="w-6 h-6 fill-brand-primary text-brand-primary" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-serif text-white tracking-tight">Guest Feedback &amp; Reviews</h2>
-                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                <h2 className="text-xl text-brand-heading font-semibold tracking-tight">Guest Feedback &amp; Reviews</h2>
+                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-brand-surface text-brand-body border border-brand-border">
                   {avgRating} / 5.0 Rating
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-brand-body mt-0.5">
                 Real-time guest ratings, operational feedback, and suite comments
               </p>
             </div>
@@ -2476,20 +2474,20 @@ function ManagerView() {
             id="refresh-reviews-btn"
             onClick={fetchReviews}
             disabled={loadingReviews}
-            className="p-2.5 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 transition-all text-xs font-bold flex items-center space-x-2 cursor-pointer self-start sm:self-center shadow-md"
+            className="p-2 px-4 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-semibold flex items-center space-x-2 cursor-pointer self-start sm:self-center shadow-stripe"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${loadingReviews ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-brand-primary ${loadingReviews ? 'animate-spin' : ''}`} />
             <span>Refresh Reviews</span>
           </button>
         </div>
 
         {reviews.length === 0 ? (
-          <div className="text-center py-12 space-y-3 bg-slate-900/40 rounded-2xl border border-slate-800 p-8">
-            <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
-              <MessageSquare className="w-6 h-6 text-slate-600" />
+          <div className="text-center py-12 space-y-3 bg-brand-surface rounded-xl border border-brand-border p-8">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-brand-card border border-brand-border flex items-center justify-center text-brand-body">
+              <MessageSquare className="w-6 h-6 text-brand-body" />
             </div>
-            <p className="text-sm font-semibold text-slate-300">No guest reviews submitted yet</p>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-sm font-semibold text-brand-heading">No guest reviews submitted yet</p>
+            <p className="text-xs text-brand-body max-w-sm mx-auto">
               When guests rate their stay in the Guest Portal, their feedback and ratings will appear here in real time.
             </p>
           </div>
@@ -2500,35 +2498,35 @@ function ManagerView() {
               return (
                 <div
                   key={rev.id || idx}
-                  className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 transition-all space-y-4 shadow-md"
+                  className="bg-brand-card border border-brand-border p-6 rounded-xl hover:border-brand-primary/20 transition-all space-y-4 shadow-stripe"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <span className="px-3 py-1 rounded-xl text-xs font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      <span className="px-3 py-1 rounded-xl text-xs font-extrabold bg-brand-surface text-brand-primary border border-brand-border">
                         {rev.room_number ? (rev.room_number.toLowerCase().startsWith('room') ? rev.room_number : `Room ${rev.room_number}`) : 'Guest Suite'}
                       </span>
                     </div>
 
-                    <div className="flex items-center space-x-1 bg-slate-950 px-3 py-1 rounded-full border border-slate-800">
+                    <div className="flex items-center space-x-1 bg-brand-surface px-3 py-1 rounded-lg border border-brand-border">
                       {[1, 2, 3, 4, 5].map((s) => (
                         <Star
                           key={s}
                           className={`w-4 h-4 ${
                             s <= ratingNum
-                              ? 'text-amber-400 fill-amber-400'
-                              : 'text-slate-700 fill-transparent'
+                              ? 'text-brand-accent fill-brand-accent'
+                              : 'text-slate-200 fill-transparent'
                           }`}
                         />
                       ))}
-                      <span className="text-xs font-bold text-amber-400 ml-1.5">{ratingNum}.0</span>
+                      <span className="text-xs font-bold text-brand-primary ml-1.5">{ratingNum}.0</span>
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                  <p className="text-sm text-brand-body leading-relaxed italic bg-brand-surface p-3.5 rounded-lg border border-brand-border">
                     "{rev.comment || 'No written comments provided.'}"
                   </p>
 
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800/60 font-mono">
+                  <div className="flex items-center justify-between text-[10px] text-brand-body pt-1 border-t border-brand-border font-mono">
                     <span>Feedback Record #{rev.id || idx + 1}</span>
                     <span>Verified Guest Stay</span>
                   </div>

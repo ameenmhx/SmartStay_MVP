@@ -7,43 +7,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#f4f6fb',
-          100: '#e5e9f6',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          900: '#1e1b4b',
-        },
-        amber: {
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
+        brand: {
+          primary: '#1E293B',    // Slate
+          secondary: '#059669',  // Emerald
+          bg: '#FFFFFF',         // White Background
+          surface: '#F8FAFC',    // Section Background
+          card: '#FFFFFF',       // Card
+          heading: '#0F172A',    // Heading
+          body: '#475569',       // Body Text
+          border: '#E2E8F0',     // Border
+          accent: '#F59E0B',     // Amber
         }
       },
-      fontFamily: {
-        serif: ['"Playfair Display"', 'Georgia', 'serif'],
-        cinzel: ['"Cinzel"', 'serif'],
-        sans: ['Inter', 'Outfit', 'sans-serif'],
-      },
-      animation: {
-        'pulse-glow': 'pulseGlow 2s infinite ease-in-out',
-        'fade-in': 'fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-      },
-      keyframes: {
-        pulseGlow: {
-          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
-          '50%': { opacity: '0.6', transform: 'scale(1.05)' },
-        },
-        fadeIn: {
-          '0%': { opacity: '0', transform: 'translateY(8px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(16px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        }
+      boxShadow: {
+        'stripe': '0 2px 5px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)',
+        'stripe-hover': '0 7px 14px rgba(0, 0, 0, 0.08), 0 3px 6px rgba(0, 0, 0, 0.06)',
       }
     },
   },
