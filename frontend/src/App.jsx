@@ -49,6 +49,8 @@ import {
   MessageSquare,
   Award,
   ThumbsUp,
+  Home,
+  ClipboardList,
 } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
@@ -239,12 +241,56 @@ function GuestView({ roomFromUrl }) {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
-
   // Voice Request State
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
 
   const socketRef = useRef(null);
+
+  // Bottom Navigation State & Refs
+  const [activeNavTab, setActiveNavTab] = useState('home');
+  const homeRef = useRef(null);
+  const servicesRef = useRef(null);
+  const requestsRef = useRef(null);
+  const feedbackRef = useRef(null);
+
+  const scrollToSection = (sectionRef, tabName) => {
+    setActiveNavTab(tabName);
+    if (sectionRef && sectionRef.current) {
+      sectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  useEffect(() => {
+    if (!hasRoomParam) return;
+    const options = {
+      root: null,
+      rootMargin: '-15% 0px -60% 0px',
+      threshold: 0,
+    };
+
+    const handleIntersect = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          if (entry.target === homeRef.current) setActiveNavTab('home');
+          else if (entry.target === servicesRef.current) setActiveNavTab('services');
+          else if (entry.target === requestsRef.current) setActiveNavTab('requests');
+          else if (entry.target === feedbackRef.current) setActiveNavTab('feedback');
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersect, options);
+
+    if (homeRef.current) observer.observe(homeRef.current);
+    if (servicesRef.current) observer.observe(servicesRef.current);
+    if (requestsRef.current) observer.observe(requestsRef.current);
+    if (feedbackRef.current) observer.observe(feedbackRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasRoomParam]);
 
   // Dynamic Time-Aware UI Context Helper
   const getTimeContext = () => {
@@ -561,7 +607,7 @@ function GuestView({ roomFromUrl }) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 animate-fade-in">
+    <div className="max-w-5xl mx-auto space-y-10 pb-32 animate-fade-in">
       {/* Toast Notification Banner */}
       {toast && (
         <div
@@ -580,51 +626,89 @@ function GuestView({ roomFromUrl }) {
         </div>
       )}
 
-      {/* Time-Aware UI: Dynamic Greeting Banner */}
-      <div className="bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border shadow-stripe relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center space-x-3">
-              <span className={`px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider border flex items-center space-x-1.5 ${timeContext.badgeColor}`}>
-                <TimeIcon className="w-3.5 h-3.5 mr-1 text-brand-primary" />
+      {/* Fixed Bottom Navigation Bar (Visible on mobile/desktop as floating bar) */}
+      <div className="fixed bottom-0 sm:bottom-4 left-0 sm:left-1/2 sm:-translate-x-1/2 w-full sm:max-w-md bg-white/95 backdrop-blur-md border-t sm:border border-slate-200/80 sm:rounded-full py-3 px-6 z-50 shadow-lg flex justify-around items-center transition-all duration-305">
+        <button
+          onClick={() => scrollToSection(homeRef, 'home')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'home' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Home className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide">Home</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(servicesRef, 'services')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'services' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <ConciergeBell className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide">Services</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(requestsRef, 'requests')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'requests' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <ClipboardList className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide">Requests</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(feedbackRef, 'feedback')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'feedback' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Star className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide">Feedback</span>
+        </button>
+      </div>
+
+      {/* Time-Aware UI: Redesigned Premium Greeting Banner */}
+      <div ref={homeRef} className="scroll-mt-24 bg-gradient-to-br from-white via-slate-50/50 to-slate-100/30 border border-slate-200/60 p-8 sm:p-10 rounded-3xl shadow-sm relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-3.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center space-x-1.5 bg-white text-slate-700 shadow-sm border-slate-200/80`}>
+                <TimeIcon className="w-3.5 h-3.5 text-brand-accent" />
                 <span>{timeContext.greeting}</span>
               </span>
               <span
-                className={`px-3 py-1 rounded-full text-[11px] font-semibold border flex items-center space-x-1.5 ${
+                className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border flex items-center space-x-1.5 shadow-sm ${
                   wsStatus === 'CONNECTED'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                    : 'bg-amber-50 text-amber-700 border-amber-100'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
-                <span>{wsStatus === 'CONNECTED' ? 'Live Telemetry' : 'Connecting'}</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${wsStatus === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
+                <span>{wsStatus === 'CONNECTED' ? 'Live Concierge' : 'Reconnecting'}</span>
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl text-brand-heading font-semibold tracking-tight mt-1">
-              {timeContext.greeting}, Distinguished Guest!
+            <h1 className="text-3xl sm:text-4xl text-slate-800 font-extrabold tracking-tight leading-none">
+              {timeContext.greeting}, <span className="text-slate-500 font-medium">Distinguished Guest</span>
             </h1>
-            <p className="text-sm text-brand-body max-w-xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-500 max-w-xl leading-relaxed">
               {timeContext.subtext}
             </p>
           </div>
 
-          {/* Read-Only Suite Keycard Badge */}
-          <div className="bg-brand-surface p-4 px-5 rounded-xl border border-brand-border flex items-center space-x-3 shadow-stripe shrink-0">
-            <Crown className="w-5 h-5 text-brand-primary" />
-            <div>
-              <span className="text-[10px] font-bold text-brand-body uppercase tracking-wider block">Suite Residence</span>
-              <span className="text-base font-semibold text-brand-heading">{selectedRoom}</span>
-            </div>
+          {/* Premium Suite Badge */}
+          <div className="bg-slate-900 text-white p-5 px-7 rounded-2xl flex flex-col items-center justify-center min-w-[140px] shadow-lg border border-slate-800 shrink-0 transform hover:scale-[1.02] transition-all">
+            <Crown className="w-5 h-5 text-amber-400 mb-1" />
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Suite Number</span>
+            <span className="text-2xl font-black tracking-tight mt-0.5">{selectedRoom}</span>
           </div>
         </div>
 
         {/* Dynamic Quick Suggestions (Time-Based) */}
-        <div className="mt-8 pt-6 border-t border-brand-border">
+        <div className="mt-8 pt-6 border-t border-slate-200/60 relative z-10">
           <div className="flex items-center space-x-2 mb-4">
-            <Zap className="w-4 h-4 text-brand-primary animate-pulse" />
-            <span className="text-xs font-bold text-brand-heading uppercase tracking-wider">
-              Curated Recommendations for {timeContext.greeting}
+            <Zap className="w-4 h-4 text-amber-500 animate-pulse" />
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Curated Suggestions for {timeContext.greeting}
             </span>
           </div>
 
@@ -635,22 +719,22 @@ function GuestView({ roomFromUrl }) {
               return (
                 <div
                   key={item.id}
-                  className="bg-brand-card hover:bg-brand-surface/40 p-4 rounded-xl border border-brand-border hover:border-brand-primary/20 transition-all flex items-center justify-between gap-3 group shadow-stripe"
+                  className="bg-white hover:bg-slate-50 p-4 rounded-2xl border border-slate-200/50 hover:border-slate-300 transition-all flex items-center justify-between gap-3 group shadow-sm hover:shadow"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg bg-brand-surface border border-brand-border flex items-center justify-center text-brand-primary shadow-inner">
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 shadow-sm group-hover:bg-slate-950 group-hover:text-white transition-all duration-300">
                       <ItemIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-brand-heading">{item.title}</h4>
-                      <span className="text-[10px] text-brand-body block mt-0.5">{item.desc}</span>
+                      <h4 className="text-xs font-bold text-slate-800">{item.title}</h4>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">{item.desc}</span>
                     </div>
                   </div>
                   <button
                     id={`quick-suggest-btn-${item.id.toLowerCase().replace(/\s+/g, '-')}`}
                     disabled={isLoading}
                     onClick={() => handleOrder(item.id)}
-                    className="px-3.5 py-1.5 bg-brand-primary hover:bg-brand-primary/95 text-white shadow-stripe hover:shadow-stripe-hover rounded-lg text-xs font-semibold transition-all shrink-0 flex items-center gap-1 cursor-pointer"
+                    className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[11px] font-semibold transition-all shrink-0 flex items-center gap-1 cursor-pointer border border-transparent disabled:opacity-50"
                   >
                     {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <span>Request</span>}
                   </button>
@@ -699,198 +783,202 @@ function GuestView({ roomFromUrl }) {
         </button>
       </div>
 
-      {/* Category Filter Tabs */}
-      <div className="flex items-center justify-between border-b border-brand-border pb-4">
-        <div className="flex space-x-3 overflow-x-auto py-1 no-scrollbar">
-          <button
-            id="cat-tab-all"
-            onClick={() => setActiveCategoryTab('ALL')}
-            className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 shrink-0 cursor-pointer ${
-              activeCategoryTab === 'ALL'
-                ? 'bg-brand-primary text-white shadow-stripe'
-                : 'bg-brand-card text-brand-body hover:text-brand-heading hover:bg-brand-surface border border-brand-border'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>All Categories</span>
-          </button>
-          {serviceCategories.map((cat) => {
-            const Icon = cat.icon;
-            const isActive = activeCategoryTab === cat.id;
-            return (
-              <button
-                key={cat.id}
-                id={`cat-tab-${cat.id}`}
-                onClick={() => setActiveCategoryTab(cat.id)}
-                className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 shrink-0 cursor-pointer ${
-                  isActive
-                    ? 'bg-brand-primary text-white shadow-stripe'
-                    : 'bg-brand-card text-brand-body hover:text-brand-heading hover:bg-brand-surface border border-brand-border'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{cat.title}</span>
-              </button>
-            );
-          })}
+      {/* Services Section */}
+      <div ref={servicesRef} className="scroll-mt-24 space-y-10">
+        {/* Category Filter Tabs redesigned as horizontal scroll Category Pills */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex space-x-2.5 overflow-x-auto py-2 no-scrollbar w-full">
+            <button
+              id="cat-tab-all"
+              onClick={() => setActiveCategoryTab('ALL')}
+              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 flex items-center space-x-2 shrink-0 cursor-pointer shadow-sm border ${
+                activeCategoryTab === 'ALL'
+                  ? 'bg-slate-900 text-white border-transparent'
+                  : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-slate-200/80'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>All Categories</span>
+            </button>
+            {serviceCategories.map((cat) => {
+              const Icon = cat.icon;
+              const isActive = activeCategoryTab === cat.id;
+              const pillTitle = cat.title.split(' & ')[0]; // E.g., 'In-Suite Dining'
+              return (
+                <button
+                  key={cat.id}
+                  id={`cat-tab-${cat.id}`}
+                  onClick={() => setActiveCategoryTab(cat.id)}
+                  className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 flex items-center space-x-2 shrink-0 cursor-pointer shadow-sm border ${
+                    isActive
+                      ? 'bg-slate-900 text-white border-transparent'
+                      : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-slate-200/80'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{pillTitle}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Categorized Request UI Grid */}
-      <div className="space-y-10">
-        {serviceCategories
-          .filter((cat) => activeCategoryTab === 'ALL' || activeCategoryTab === cat.id)
-          .map((cat) => {
-            const CatIcon = cat.icon;
-            return (
-              <div key={cat.id} className="space-y-5 animate-fade-in">
-                <div className="flex items-center space-x-3 border-l-4 border-brand-primary pl-4 py-0.5">
-                  <div className="p-2 rounded-xl bg-brand-surface text-brand-primary border border-brand-border">
-                    <CatIcon className="w-5 h-5" />
+        {/* Categorized Request UI Grid */}
+        <div className="space-y-10">
+          {serviceCategories
+            .filter((cat) => activeCategoryTab === 'ALL' || activeCategoryTab === cat.id)
+            .map((cat) => {
+              const CatIcon = cat.icon;
+              return (
+                <div key={cat.id} className="space-y-5 animate-fade-in">
+                  <div className="flex items-center space-x-3 border-l-4 border-slate-800 pl-4 py-0.5">
+                    <div className="p-2 rounded-xl bg-slate-50 text-slate-800 border border-slate-200/80">
+                      <CatIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-800">{cat.title}</h2>
+                      <p className="text-xs text-slate-500">{cat.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-brand-heading">{cat.title}</h2>
-                    <p className="text-xs text-brand-body">{cat.description}</p>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                  {cat.items.map((item) => {
-                    const ItemIcon = item.icon;
-                    const isLoading = loadingItem === item.id;
-                    return (
-                      <div
-                        key={item.id}
-                        className="bg-brand-card border border-brand-border rounded-xl p-5 shadow-stripe flex flex-col justify-between space-y-5 hover:border-brand-primary/20 hover:shadow-stripe-hover transition-all duration-300 group"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="w-11 h-11 rounded-xl bg-brand-surface border border-brand-border flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all shadow-stripe">
-                            <ItemIcon className="w-5 h-5" />
-                          </div>
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-surface text-brand-body border border-brand-border">
-                            {item.badge}
-                          </span>
-                        </div>
-
-                        <div>
-                          <h3 className="font-bold text-sm text-brand-heading">{item.title}</h3>
-                          <p className="text-xs text-brand-body mt-1 leading-relaxed">{item.desc}</p>
-                        </div>
-
-                        <button
-                          id={`request-btn-${item.id.toLowerCase().replace(/\s+/g, '-')}`}
-                          disabled={isLoading}
-                          onClick={() => handleOrder(item.id)}
-                          className="w-full py-2.5 px-4 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-lg text-xs font-bold shadow-stripe hover:shadow-stripe-hover transition-all flex items-center justify-center space-x-2 cursor-pointer border border-brand-primary"
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {cat.items.map((item) => {
+                      const ItemIcon = item.icon;
+                      const isLoading = loadingItem === item.id;
+                      return (
+                        <div
+                          key={item.id}
+                          className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-5 hover:border-slate-200/80 hover:shadow-md transition-all duration-300 group"
                         >
-                          {isLoading ? (
-                            <>
-                              <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
-                              <span>Sending...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>Order Now</span>
-                              <ChevronRight className="w-3.5 h-3.5 text-white" />
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-      </div>
+                          <div className="flex items-start justify-between">
+                            <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center text-slate-700 shadow-inner group-hover:bg-slate-900 group-hover:text-white transition-all duration-300">
+                              <ItemIcon className="w-5 h-5" />
+                            </div>
+                            <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase mt-1">
+                              {item.badge}
+                            </span>
+                          </div>
 
-      {/* Custom Request Input Section with Voice Requests */}
-      <div className="bg-brand-card p-6 sm:p-8 rounded-2xl border border-brand-border space-y-4 shadow-stripe">
-        <div className="flex items-center justify-between">
-          <label htmlFor="custom-item-input" className="text-xs font-bold uppercase tracking-wider text-brand-heading block">
-            Custom In-Suite Request
-          </label>
-          <span className="text-[11px] text-brand-primary font-semibold flex items-center gap-1.5">
-            <Mic className="w-3.5 h-3.5" /> Voice Input Supported
-          </span>
+                          <div>
+                            <h3 className="font-bold text-sm text-slate-800">{item.title}</h3>
+                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{item.desc}</p>
+                          </div>
+
+                          <button
+                            id={`request-btn-${item.id.toLowerCase().replace(/\s+/g, '-')}`}
+                            disabled={isLoading}
+                            onClick={() => handleOrder(item.id)}
+                            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer border border-transparent disabled:opacity-50"
+                          >
+                            {isLoading ? (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                                <span>Sending...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>Order Now</span>
+                                <ChevronRight className="w-3.5 h-3.5 text-white" />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
         </div>
 
-        <div className="flex gap-3 flex-col sm:flex-row">
-          <div className="relative flex-1">
-            <input
-              id="custom-item-input"
-              type="text"
-              placeholder="e.g. Extra Feather Pillow, Dental Kit, Ice Bucket..."
-              value={customItem}
-              onChange={(e) => setCustomItem(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleOrder(customItem)}
-              className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-xs sm:text-sm rounded-lg pl-4 pr-10 py-3.5 focus:outline-none focus:border-brand-primary transition-all"
-            />
-            {customItem && (
-              <button
-                type="button"
-                onClick={() => setCustomItem('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-body hover:text-brand-heading text-xs font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            )}
+        {/* Custom Request Input Section with Voice Requests */}
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <label htmlFor="custom-item-input" className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+              Custom In-Suite Request
+            </label>
+            <span className="text-[11px] text-slate-500 font-semibold flex items-center gap-1.5">
+              <Mic className="w-3.5 h-3.5 text-slate-400" /> Voice Input Supported
+            </span>
           </div>
 
-          {/* Voice Requests Microphone Button */}
-          <button
-            id="voice-request-btn"
-            type="button"
-            onClick={toggleVoiceRecognition}
-            className={`px-4 py-3.5 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border transition-all shrink-0 cursor-pointer ${
-              isListening
-                ? 'bg-red-600 text-white border-red-400 animate-pulse shadow-lg shadow-red-600/40 ring-2 ring-red-500/50'
-                : 'bg-brand-surface hover:bg-brand-surface/80 text-brand-primary border-brand-border'
-            }`}
-            title={isListening ? 'Click to stop listening' : 'Speak your request using voice'}
-          >
-            {isListening ? (
-              <>
-                <MicOff className="w-4 h-4 text-white" />
-                <span>Listening...</span>
-              </>
-            ) : (
-              <>
-                <Mic className="w-4 h-4 text-brand-primary" />
-                <span>Speak Request</span>
-              </>
-            )}
-          </button>
+          <div className="flex gap-3 flex-col sm:flex-row">
+            <div className="relative flex-1">
+              <input
+                id="custom-item-input"
+                type="text"
+                placeholder="e.g. Extra Feather Pillow, Dental Kit, Ice Bucket..."
+                value={customItem}
+                onChange={(e) => setCustomItem(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleOrder(customItem)}
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 text-xs sm:text-sm rounded-xl pl-4 pr-10 py-3.5 focus:outline-none focus:border-slate-800 focus:bg-white transition-all"
+              />
+              {customItem && (
+                <button
+                  type="button"
+                  onClick={() => setCustomItem('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-          <button
-            id="request-custom-btn"
-            disabled={!customItem.trim() || loadingItem === customItem}
-            onClick={() => handleOrder(customItem)}
-            className="px-6 py-3.5 bg-brand-primary text-white shadow-stripe hover:shadow-stripe-hover disabled:bg-brand-surface disabled:text-slate-300 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center space-x-2 shrink-0 cursor-pointer border border-brand-border"
-          >
-            <Send className="w-4 h-4 text-white" />
-            <span>Submit Custom Request</span>
-          </button>
+            {/* Voice Requests Microphone Button */}
+            <button
+              id="voice-request-btn"
+              type="button"
+              onClick={toggleVoiceRecognition}
+              className={`px-4 py-3.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border transition-all shrink-0 cursor-pointer ${
+                isListening
+                  ? 'bg-red-600 text-white border-red-500 animate-pulse shadow-lg shadow-red-600/40 ring-2 ring-red-500/50'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+              }`}
+              title={isListening ? 'Click to stop listening' : 'Speak your request using voice'}
+            >
+              {isListening ? (
+                <>
+                  <MicOff className="w-4 h-4 text-white" />
+                  <span>Listening...</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4 text-slate-600" />
+                  <span>Speak Request</span>
+                </>
+              )}
+            </button>
+
+            <button
+              id="request-custom-btn"
+              disabled={!customItem.trim() || loadingItem === customItem}
+              onClick={() => handleOrder(customItem)}
+              className="px-6 py-3.5 bg-slate-900 text-white hover:bg-slate-800 shadow-sm disabled:bg-slate-100 disabled:text-slate-400 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center space-x-2 shrink-0 cursor-pointer border border-transparent"
+            >
+              <Send className="w-4 h-4 text-white" />
+              <span>Submit Custom Request</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* ==========================================================================
          MY REQUEST STATUS SECTION (Bottom of Guest View)
          ========================================================================== */}
-      <div className="bg-brand-card p-6 sm:p-8 rounded-2xl border border-brand-border space-y-6 shadow-stripe relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
+      <div ref={requestsRef} className="scroll-mt-24 bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 space-y-6 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
-              <Clock className="w-6 h-6" />
+            <div className="p-3 bg-slate-50 border border-slate-200/80 text-slate-800 rounded-xl">
+              <Clock className="w-6 h-6 text-slate-700" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl text-brand-heading font-semibold tracking-tight">Suite Active Request Status</h2>
-                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-brand-surface text-brand-heading border border-brand-border">
+                <h2 className="text-xl text-slate-800 font-semibold tracking-tight">Suite Active Request Status</h2>
+                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200/80">
                   {selectedRoom}
                 </span>
               </div>
-              <p className="text-xs text-brand-body mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Real-time tracking for all services requested in your suite
               </p>
             </div>
@@ -899,21 +987,21 @@ function GuestView({ roomFromUrl }) {
           <button
             id="refresh-guest-status-btn"
             onClick={fetchMyRequests}
-            className="p-2.5 px-4 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-bold flex items-center space-x-2 self-start sm:self-center shadow-stripe cursor-pointer"
+            className="p-2.5 px-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl transition-all text-xs font-bold flex items-center space-x-2 self-start sm:self-center shadow-sm cursor-pointer"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-brand-primary" />
+            <RefreshCw className="w-3.5 h-3.5 text-slate-655" />
             <span>Refresh Status</span>
           </button>
         </div>
 
         {/* Requests List */}
         {myRequests.length === 0 ? (
-          <div className="text-center py-12 space-y-3 bg-brand-surface rounded-xl border border-brand-border p-8">
-            <div className="w-14 h-14 mx-auto rounded-xl bg-brand-card border border-brand-border flex items-center justify-center text-brand-body">
-              <ShieldCheck className="w-7 h-7 text-brand-body" />
+          <div className="text-center py-12 space-y-3 bg-slate-50 rounded-2xl border border-slate-150 p-8">
+            <div className="w-14 h-14 mx-auto rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400">
+              <ShieldCheck className="w-7 h-7" />
             </div>
-            <p className="text-sm font-semibold text-brand-heading">No active requests for Suite {selectedRoom}</p>
-            <p className="text-xs text-brand-body max-w-sm mx-auto">
+            <p className="text-sm font-semibold text-slate-800">No active requests for Suite {selectedRoom}</p>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Any item or service requested above will appear here in real time with live status updates.
             </p>
           </div>
@@ -929,74 +1017,111 @@ function GuestView({ roomFromUrl }) {
               return (
                 <div
                   key={req.id || idx}
-                  className={`bg-brand-card border rounded-xl p-6 flex flex-col justify-between space-y-5 shadow-stripe transition-all duration-300 animate-slide-up ${
+                  className={`bg-white border rounded-2xl p-6 flex flex-col justify-between space-y-5 shadow-sm transition-all duration-305 animate-slide-up ${
                     isEmergency
-                      ? 'border-brand-accent'
+                      ? 'border-red-250 border-red-200 bg-red-50/20'
                       : isPending
-                      ? 'border-brand-border'
+                      ? 'border-slate-100'
                       : isOnTheWay
-                      ? 'border-brand-border'
-                      : 'border-brand-secondary/30'
+                      ? 'border-slate-150'
+                      : 'border-emerald-100 bg-emerald-50/10'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <span className={`text-[10px] font-bold tracking-widest uppercase ${isEmergency ? 'text-brand-accent' : 'text-brand-primary'}`}>
+                      <span className={`text-[10px] font-bold tracking-widest uppercase ${isEmergency ? 'text-red-500' : 'text-slate-400'}`}>
                         Order #{req.id || idx + 1}
                       </span>
-                      <h3 className={`text-base font-sans font-semibold mt-1 ${isEmergency ? 'text-brand-accent' : 'text-brand-heading'}`}>{req.item_requested}</h3>
+                      <h3 className={`text-base font-sans font-semibold mt-1 ${isEmergency ? 'text-red-650' : 'text-slate-850'}`}>{req.item_requested}</h3>
                     </div>
 
                     {/* Status Badge */}
                     <span
                       className={`px-3 py-1 rounded-full text-[11px] font-semibold border flex items-center space-x-1.5 shrink-0 ${
                         isEmergency
-                          ? 'bg-brand-accent text-white border-none'
+                          ? 'bg-red-500 text-white border-none'
                           : isPending
-                          ? 'bg-brand-surface text-brand-body border-brand-border'
+                          ? 'bg-slate-50 text-slate-600 border-slate-200'
                           : isOnTheWay
-                          ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 animate-pulse'
-                          : 'bg-brand-secondary/15 text-brand-secondary border-brand-secondary/30'
+                          ? 'bg-amber-50 text-amber-750 text-amber-700 border-amber-200 animate-pulse'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-150'
                       }`}
                     >
                       {isPending ? (
                         <>
-                          <Clock className="w-3.5 h-3.5 text-brand-primary" />
+                          <Clock className="w-3.5 h-3.5 text-slate-500" />
                           <span>Pending</span>
                         </>
                       ) : isOnTheWay ? (
                         <>
-                          <Truck className="w-3.5 h-3.5 text-brand-primary animate-pulse" />
+                          <Truck className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
                           <span>On the Way</span>
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-brand-secondary" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                           <span>Delivered</span>
                         </>
                       )}
                     </span>
                   </div>
 
-                  {/* Status Progress Bar */}
-                  <div className="space-y-2 pt-2 border-t border-brand-border">
-                    <div className="w-full bg-brand-surface h-2 rounded-full overflow-hidden flex border border-brand-border">
-                      <div
-                        className={`h-full transition-all duration-500 ${
-                          isEmergency
-                            ? 'w-full bg-brand-accent'
-                            : isPending
-                            ? 'w-1/3 bg-brand-primary/40'
-                            : isOnTheWay
-                            ? 'w-2/3 bg-brand-primary'
-                            : 'w-full bg-brand-secondary'
+                  {/* Redesigned Visual Progress Stepper Tracker */}
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <div className="relative flex items-center justify-between mt-2 px-1">
+                      {/* Tracker Track Background */}
+                      <div className="absolute left-4 right-4 top-3 -translate-y-1/2 h-1 bg-slate-100 rounded-full z-0"></div>
+                      
+                      {/* Tracker Track Active Progress */}
+                      <div 
+                        className={`absolute left-4 top-3 -translate-y-1/2 h-1 rounded-full z-0 transition-all duration-500 ${
+                          isEmergency ? 'bg-red-500' : 'bg-emerald-500'
                         }`}
+                        style={{
+                          width: isEmergency 
+                            ? '100%' 
+                            : isDelivered 
+                            ? 'calc(100% - 2rem)' 
+                            : isOnTheWay 
+                            ? '50%' 
+                            : '0%'
+                        }}
                       ></div>
-                    </div>
-                    <div className="flex justify-between text-[10px] text-brand-body font-mono">
-                      <span>Received</span>
-                      <span>En Route</span>
-                      <span>Fulfilled</span>
+
+                      {/* Stepper Dots */}
+                      {[
+                        { label: 'Received', key: 'received', active: true, current: isPending },
+                        { label: 'En Route', key: 'enroute', active: isOnTheWay || isDelivered, current: isOnTheWay },
+                        { label: 'Fulfilled', key: 'fulfilled', active: isDelivered, current: isDelivered }
+                      ].map((step, sIdx) => {
+                        const stepActive = isEmergency || step.active;
+                        const stepCurrent = !isEmergency && step.current;
+                        
+                        return (
+                          <div key={step.key} className="flex flex-col items-center z-10 relative">
+                            <div 
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-extrabold transition-all duration-300 ${
+                                isEmergency
+                                  ? 'bg-red-500 text-white ring-4 ring-red-100'
+                                  : stepActive
+                                  ? stepCurrent
+                                    ? 'bg-emerald-500 text-white ring-4 ring-emerald-100'
+                                    : 'bg-emerald-500 text-white shadow-sm'
+                                  : 'bg-white text-slate-400 border border-slate-200'
+                              }`}
+                            >
+                              {stepActive && !stepCurrent ? '✓' : sIdx + 1}
+                            </div>
+                            <span 
+                              className={`text-[9px] font-bold mt-2 transition-colors duration-300 ${
+                                stepActive ? 'text-slate-800' : 'text-slate-400'
+                              }`}
+                            >
+                              {step.label}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -1009,20 +1134,20 @@ function GuestView({ roomFromUrl }) {
       {/* ==========================================================================
          RATE YOUR STAY SECTION (5-Star Guest Feedback)
          ========================================================================== */}
-      <div className="bg-brand-card p-6 sm:p-10 rounded-2xl border border-brand-border space-y-6 shadow-stripe relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
+      <div ref={feedbackRef} className="scroll-mt-24 bg-white p-6 sm:p-10 rounded-3xl border border-slate-100 space-y-6 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
-              <Star className="w-6 h-6 fill-brand-primary text-brand-primary" />
+            <div className="p-3 bg-slate-50 border border-slate-200 text-slate-800 rounded-xl">
+              <Star className="w-6 h-6 fill-slate-800 text-slate-800" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl text-brand-heading font-semibold tracking-tight">Rate Your Stay</h2>
-                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-brand-surface text-brand-body border border-brand-border">
+                <h2 className="text-xl text-slate-850 font-semibold tracking-tight">Rate Your Stay</h2>
+                <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-slate-50 text-slate-705 border border-slate-200">
                   5-Star Feedback
                 </span>
               </div>
-              <p className="text-xs text-brand-body mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 We value your experience. Help us maintain our highest standards of luxury hospitality.
               </p>
             </div>
@@ -1030,14 +1155,14 @@ function GuestView({ roomFromUrl }) {
         </div>
 
         {reviewSubmitted ? (
-          <div className="p-8 rounded-xl bg-brand-surface border border-brand-border text-center space-y-4 animate-fade-in">
-            <div className="w-16 h-16 mx-auto rounded-full bg-brand-secondary/15 border border-brand-secondary/25 flex items-center justify-center text-brand-secondary shadow-stripe">
-              <CheckCircle2 className="w-9 h-9 text-brand-secondary" />
+          <div className="p-8 rounded-xl bg-slate-50 border border-slate-150 text-center space-y-4 animate-fade-in">
+            <div className="w-16 h-16 mx-auto rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shadow-sm">
+              <CheckCircle2 className="w-9 h-9 text-slate-600" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl text-brand-heading font-semibold">Thank You for Your Feedback!</h3>
-              <p className="text-sm text-brand-body max-w-md mx-auto leading-relaxed">
-                Your response for Suite <span className="text-brand-heading font-semibold">{selectedRoom}</span> has been submitted to resort management. We appreciate your valuable insights.
+              <h3 className="text-xl text-slate-800 font-semibold">Thank You for Your Feedback!</h3>
+              <p className="text-sm text-slate-550 text-slate-500 max-w-md mx-auto leading-relaxed">
+                Your response for Suite <span className="text-slate-800 font-semibold">{selectedRoom}</span> has been submitted to resort management. We appreciate your valuable insights.
               </p>
             </div>
 
@@ -1047,7 +1172,7 @@ function GuestView({ roomFromUrl }) {
                   key={star}
                   className={`w-6 h-6 ${
                     star <= reviewRating
-                      ? 'text-brand-accent fill-brand-accent'
+                      ? 'text-amber-500 fill-amber-500'
                       : 'text-slate-200 fill-transparent'
                   }`}
                 />
@@ -1055,7 +1180,7 @@ function GuestView({ roomFromUrl }) {
             </div>
 
             {reviewComment && (
-              <div className="max-w-lg mx-auto p-4 bg-white rounded-xl border border-brand-border text-xs text-brand-body italic">
+              <div className="max-w-lg mx-auto p-4 bg-white rounded-xl border border-slate-200/60 text-xs text-slate-500 italic">
                 "{reviewComment}"
               </div>
             )}
@@ -1066,7 +1191,7 @@ function GuestView({ roomFromUrl }) {
                 setReviewSubmitted(false);
                 setReviewComment('');
               }}
-              className="mt-4 px-5 py-2.5 bg-brand-surface hover:bg-brand-surface/80 text-brand-heading text-xs font-semibold rounded-lg border border-brand-border transition-all cursor-pointer"
+              className="mt-4 px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-705 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer"
             >
               Submit Another Rating
             </button>
@@ -1074,8 +1199,8 @@ function GuestView({ roomFromUrl }) {
         ) : (
           <form onSubmit={handleSubmitReview} className="space-y-6">
             {/* Interactive Star Rating Selector */}
-            <div className="flex flex-col items-center justify-center p-6 bg-brand-surface rounded-xl border border-brand-border space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-heading">
+            <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-150 space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                 Select Star Rating
               </span>
               <div className="flex items-center space-x-2">
@@ -1089,21 +1214,21 @@ function GuestView({ roomFromUrl }) {
                       onClick={() => setReviewRating(star)}
                       onMouseEnter={() => setReviewHoverRating(star)}
                       onMouseLeave={() => setReviewHoverRating(0)}
-                      className="p-2 transition-transform hover:scale-125 focus:outline-none cursor-pointer"
+                      className="p-2 transition-transform hover:scale-110 focus:outline-none cursor-pointer"
                       title={`${star} Star${star > 1 ? 's' : ''}`}
                     >
                       <Star
                         className={`w-9 h-9 transition-colors duration-150 ${
                           active
-                            ? 'text-brand-accent fill-brand-accent'
-                            : 'text-slate-300 fill-transparent hover:text-brand-accent/50'
+                            ? 'text-amber-505 text-amber-500 fill-amber-500'
+                            : 'text-slate-300 fill-transparent hover:text-amber-500/50'
                         }`}
                       />
                     </button>
                   );
                 })}
               </div>
-              <span className="text-xs font-semibold text-brand-primary">
+              <span className="text-xs font-semibold text-slate-600">
                 {reviewHoverRating || reviewRating} / 5 Stars —{' '}
                 {(reviewHoverRating || reviewRating) === 5
                   ? 'Exceptional'
@@ -1119,7 +1244,7 @@ function GuestView({ roomFromUrl }) {
 
             {/* Comment Textarea */}
             <div className="space-y-2">
-              <label htmlFor="review-comment-textarea" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+              <label htmlFor="review-comment-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                 Guest Experience Comments (Optional)
               </label>
               <textarea
@@ -1128,7 +1253,7 @@ function GuestView({ roomFromUrl }) {
                 placeholder="Tell us about your room comfort, staff responsiveness, or overall experience..."
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-xs sm:text-sm rounded-xl p-4 focus:outline-none focus:border-brand-primary transition-all resize-none"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 text-xs sm:text-sm rounded-xl p-4 focus:outline-none focus:border-slate-800 focus:bg-white transition-all resize-none"
               />
             </div>
 
@@ -1138,7 +1263,7 @@ function GuestView({ roomFromUrl }) {
                 id="submit-review-btn"
                 type="submit"
                 disabled={reviewSubmitting || !reviewRating}
-                className="px-7 py-3.5 bg-brand-primary text-white shadow-stripe hover:shadow-stripe-hover disabled:opacity-50 font-semibold text-xs sm:text-sm rounded-lg border border-brand-border transition-all flex items-center space-x-2 cursor-pointer animate-fade-in"
+                className="w-full py-3.5 bg-slate-900 text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 font-semibold text-xs sm:text-sm rounded-xl border border-transparent transition-all flex items-center justify-center space-x-2 cursor-pointer animate-fade-in"
               >
                 {reviewSubmitting ? (
                   <>
