@@ -192,6 +192,35 @@ async def put_service_request_status(request_id: str, status_data: ServiceReques
     }
 
 
+# DELETE /request/{request_id} - Delete specific service request and broadcast cancel event
+@app.delete("/request/{request_id}")
+async def delete_service_request(request_id: str):
+    formatted_id = int(request_id) if request_id.isdigit() else request_id
+    try:
+        response = (
+            supabase.table("service_requests")
+            .delete()
+            .eq("id", formatted_id)
+            .execute()
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete service request {request_id}: {str(e)}"
+        )
+
+    # Broadcast cancel message to all active WebSockets
+    broadcast_message = {
+        "type": "cancel",
+        "request_id": request_id
+    }
+    await manager.broadcast(broadcast_message)
+
+    return {
+        "message": f"Successfully cancelled and deleted service request {request_id}",
+        "request_id": request_id,
+        "deleted_records": response.data or []
+    }
 
 
 # GET /requests - Fetch all active requests from Supabase

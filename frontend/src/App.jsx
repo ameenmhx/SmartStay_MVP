@@ -245,6 +245,7 @@ function GuestView({ roomFromUrl }) {
   // Voice Request State
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const [showSosModal, setShowSosModal] = useState(false);
 
   const socketRef = useRef(null);
 
@@ -521,6 +522,9 @@ function GuestView({ roomFromUrl }) {
                 : r
             )
           );
+        } else if (payload.type === 'cancel') {
+          const cancelledId = payload.request_id;
+          setMyRequests((prev) => prev.filter((r) => String(r.id) !== String(cancelledId)));
         } else if (payload.type === 'checkout' || payload.event === 'checkout') {
           const checkedOutRoom = payload.room || payload.room_number || payload.data?.room;
           setMyRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
@@ -534,6 +538,25 @@ function GuestView({ roomFromUrl }) {
       if (socketRef.current) socketRef.current.close();
     };
   }, [selectedRoom, fetchMyRequests]);
+
+  const handleCancelOrder = async (requestId) => {
+    if (!requestId) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/request/${requestId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error ${response.status}`);
+      }
+
+      setMyRequests((prev) => prev.filter((r) => String(r.id) !== String(requestId)));
+      triggerToast('Order cancelled successfully.', 'success');
+    } catch (err) {
+      console.error('Cancellation failed:', err);
+      triggerToast(`Failed to cancel order: ${err.message}`, 'error');
+    }
+  };
 
   const handleOrder = async (itemName, isEmergency = false) => {
     if (!itemName.trim()) return;
@@ -639,6 +662,40 @@ function GuestView({ roomFromUrl }) {
 
   return (
     <>
+      {showSosModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-all duration-300">
+          <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 text-center transform scale-100 transition-all duration-200">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shadow-stripe">
+              <Siren className="w-8 h-8 animate-pulse text-red-500" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-slate-800 tracking-tight">Are you sure you need emergency assistance?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                This will instantly alert resort management and dispatch emergency staff to Room {selectedRoom}.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                id="cancel-sos-btn"
+                onClick={() => setShowSosModal(false)}
+                className="flex-1 px-5 py-3 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-xs font-bold transition-all duration-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                id="confirm-sos-btn"
+                onClick={async () => {
+                  setShowSosModal(false);
+                  await handleOrder('EMERGENCY', true);
+                }}
+                className="flex-1 px-5 py-3 rounded-xl bg-red-650 hover:bg-red-750 text-white text-xs font-bold transition-all duration-200 shadow-stripe cursor-pointer"
+              >
+                Yes, Dispatch SOS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="max-w-5xl mx-auto space-y-10 pb-32 animate-fade-in">
         {/* Toast Notification Banner */}
         {toast && (
@@ -766,7 +823,7 @@ function GuestView({ roomFromUrl }) {
         <button
           id="request-emergency-btn"
           disabled={loadingItem === 'EMERGENCY'}
-          onClick={() => handleOrder('EMERGENCY', true)}
+          onClick={() => setShowSosModal(true)}
           className="w-full sm:w-auto px-7 py-3.5 bg-white hover:bg-white/90 text-brand-accent font-bold text-xs sm:text-sm rounded-xl shadow-stripe transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center space-x-2 shrink-0 cursor-pointer relative z-10"
         >
           {loadingItem === 'EMERGENCY' ? (
@@ -1132,6 +1189,17 @@ function GuestView({ roomFromUrl }) {
                       })}
                     </div>
                   </div>
+                  {/* Cancel Request Button */}
+                  {isPending && (
+                    <div className="flex justify-end pt-3.5 border-t border-slate-100/60 mt-4">
+                      <button
+                        onClick={() => handleCancelOrder(req.id)}
+                        className="text-[11px] font-bold uppercase tracking-wider text-red-500 hover:text-red-650 transition-colors duration-200 cursor-pointer"
+                      >
+                        Cancel Request
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1400,6 +1468,9 @@ function WaiterView() {
                 : r
             )
           );
+        } else if (parsed.type === 'cancel') {
+          const cancelledId = parsed.request_id;
+          setRequests((prev) => prev.filter((r) => String(r.id) !== String(cancelledId)));
         } else if (parsed.type === 'checkout' || parsed.event === 'checkout') {
           const checkedOutRoom = parsed.room || parsed.room_number || parsed.data?.room;
           setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
@@ -2196,6 +2267,19 @@ function ManagerView() {
               timestamp: new Date().toLocaleTimeString(),
               message: `Order #${updated.id} status changed to "${normalizedStat}"`,
               status: normalizedStat,
+            },
+            ...prev.slice(0, 49),
+          ]);
+        } else if (parsed.type === 'cancel') {
+          const cancelledId = parsed.request_id;
+          setRequests((prev) => prev.filter((r) => String(r.id) !== String(cancelledId)));
+          setActivityLogs((prev) => [
+            {
+              id: Date.now() + Math.random(),
+              type: 'CANCEL',
+              timestamp: new Date().toLocaleTimeString(),
+              message: `Order #${cancelledId} cancelled by guest`,
+              status: 'Cancelled',
             },
             ...prev.slice(0, 49),
           ]);
