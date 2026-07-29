@@ -189,7 +189,7 @@ export default function App() {
       </header>
 
       {/* Main Container View */}
-      <main className={`flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 lg:p-10 ${activeView === 'guest' ? 'pb-24' : ''}`}>
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 lg:p-10 pb-28">
         {activeView === 'guest' ? (
           <GuestView roomFromUrl={roomFromUrl} />
         ) : !session ? (
@@ -658,7 +658,7 @@ function GuestView({ roomFromUrl }) {
       )}
 
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
-      <div className="fixed bottom-0 left-0 w-full bg-white/70 backdrop-blur-xl border-t border-white/20 py-4 px-6 z-50 shadow-lg flex justify-around items-center transition-all duration-300">
+      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
         <button
           onClick={() => scrollToSection(homeRef, 'home')}
           className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
@@ -1456,7 +1456,7 @@ function WaiterView() {
   const deliveredCount = requests.filter((r) => normalizeStatus(r.status) === 'Delivered').length;
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pb-28">
       {/* Dashboard Top Header Bar */}
       <div className="bg-brand-card border border-brand-border p-8 rounded-2xl shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div>
@@ -1702,6 +1702,28 @@ function WaiterView() {
           })}
         </div>
       )}
+
+      {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
+      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
+        <button
+          onClick={() => setFilter('ALL')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            filter !== 'Delivered' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <ClipboardList className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">Active Orders</span>
+        </button>
+        <button
+          onClick={() => setFilter('Delivered')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            filter === 'Delivered' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <CheckCircle2 className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">Completed</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -1729,6 +1751,46 @@ function ManagerView() {
   const [bulkEnd, setBulkEnd] = useState('112');
 
   const socketRef = useRef(null);
+
+  // Bottom Navigation State & Refs
+  const analyticsRef = useRef(null);
+  const qrGeneratorRef = useRef(null);
+  const liveFeedRef = useRef(null);
+  const [activeNavTab, setActiveNavTab] = useState('analytics');
+
+  const scrollToSection = (sectionRef, tabName) => {
+    setActiveNavTab(tabName);
+    if (sectionRef && sectionRef.current) {
+      sectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  useEffect(() => {
+    const options = {
+      root: null,
+      rootMargin: '-15% 0px -60% 0px',
+      threshold: 0,
+    };
+
+    const handleIntersect = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          if (entry.target === analyticsRef.current) setActiveNavTab('analytics');
+          else if (entry.target === qrGeneratorRef.current) setActiveNavTab('qr');
+          else if (entry.target === liveFeedRef.current) setActiveNavTab('feed');
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersect, options);
+    if (analyticsRef.current) observer.observe(analyticsRef.current);
+    if (qrGeneratorRef.current) observer.observe(qrGeneratorRef.current);
+    if (liveFeedRef.current) observer.observe(liveFeedRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // Single Print QR Code function
   const handlePrintQR = () => {
@@ -2182,9 +2244,9 @@ function ManagerView() {
   const bulkCalculatedCount = endNum >= startNum && startNum > 0 ? endNum - startNum + 1 : 0;
 
   return (
-    <div className="space-y-10 animate-fade-in">
+    <div className="space-y-10 animate-fade-in pb-28">
       {/* Header Banner */}
-      <div className="bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div ref={analyticsRef} className="scroll-mt-24 bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center space-x-3">
             <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase bg-brand-surface text-brand-primary border border-brand-border flex items-center space-x-1.5">
@@ -2300,7 +2362,7 @@ function ManagerView() {
       </div>
 
       {/* Room QR Generator Section with Single & Bulk Toggle */}
-      <div className="bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border space-y-8 shadow-stripe">
+      <div ref={qrGeneratorRef} className="scroll-mt-24 bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border space-y-8 shadow-stripe">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
@@ -2514,7 +2576,7 @@ function ManagerView() {
       </div>
 
       {/* Live Feed of Hotel Activity */}
-      <div className="bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl space-y-6 shadow-stripe">
+      <div ref={liveFeedRef} className="scroll-mt-24 bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl space-y-6 shadow-stripe">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
           <div className="flex items-center space-x-3.5">
             <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
@@ -2711,6 +2773,37 @@ function ManagerView() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
+      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
+        <button
+          onClick={() => scrollToSection(liveFeedRef, 'feed')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'feed' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Layers3 className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">Live Feed</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(analyticsRef, 'analytics')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'analytics' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <BarChart3 className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">Analytics</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(qrGeneratorRef, 'qr')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'qr' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <QrCode className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">QR Generator</span>
+        </button>
       </div>
     </div>
   );
