@@ -638,64 +638,25 @@ function GuestView({ roomFromUrl }) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 pb-32 animate-fade-in">
-      {/* Toast Notification Banner */}
-      {toast && (
-        <div
-          className={`p-5 rounded-xl border flex items-center space-x-4 shadow-stripe backdrop-blur-xl transition-all transform animate-slide-up ${
-            toast.type === 'error'
-              ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-          }`}
-        >
-          {toast.type === 'error' ? (
-            <AlertCircle className="w-6 h-6 text-red-500 shrink-0" />
-          ) : (
-            <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
-          )}
-          <div className="text-xs sm:text-sm font-semibold leading-relaxed">{toast.msg}</div>
-        </div>
-      )}
-
-      {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
-      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
-        <button
-          onClick={() => scrollToSection(homeRef, 'home')}
-          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
-            activeNavTab === 'home' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          <Home className="w-5 h-5" />
-          <span className="text-[10px] tracking-wide">Home</span>
-        </button>
-        <button
-          onClick={() => scrollToSection(servicesRef, 'services')}
-          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
-            activeNavTab === 'services' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          <ConciergeBell className="w-5 h-5" />
-          <span className="text-[10px] tracking-wide">Services</span>
-        </button>
-        <button
-          onClick={() => scrollToSection(requestsRef, 'requests')}
-          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
-            activeNavTab === 'requests' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          <ClipboardList className="w-5 h-5" />
-          <span className="text-[10px] tracking-wide">Requests</span>
-        </button>
-        <button
-          onClick={() => scrollToSection(feedbackRef, 'feedback')}
-          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
-            activeNavTab === 'feedback' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          <Star className="w-5 h-5" />
-          <span className="text-[10px] tracking-wide">Feedback</span>
-        </button>
-      </div>
+    <>
+      <div className="max-w-5xl mx-auto space-y-10 pb-32 animate-fade-in">
+        {/* Toast Notification Banner */}
+        {toast && (
+          <div
+            className={`p-5 rounded-xl border flex items-center space-x-4 shadow-stripe backdrop-blur-xl transition-all transform animate-slide-up ${
+              toast.type === 'error'
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            }`}
+          >
+            {toast.type === 'error' ? (
+              <AlertCircle className="w-6 h-6 text-red-500 shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
+            )}
+            <div className="text-xs sm:text-sm font-semibold leading-relaxed">{toast.msg}</div>
+          </div>
+        )}
 
       {/* Time-Aware UI: Redesigned Premium Greeting Banner with Dynamic Background */}
       <div 
@@ -1329,6 +1290,47 @@ function GuestView({ roomFromUrl }) {
         )}
       </div>
     </div>
+
+      {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
+      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
+        <button
+          onClick={() => scrollToSection(homeRef, 'home')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'home' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Home className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide">Home</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(servicesRef, 'services')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'services' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <ConciergeBell className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide">Services</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(requestsRef, 'requests')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'requests' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <ClipboardList className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide">Requests</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(feedbackRef, 'feedback')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'feedback' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Star className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide">Feedback</span>
+        </button>
+      </div>
+    </>
   );
 }
 
@@ -1456,7 +1458,8 @@ function WaiterView() {
   const deliveredCount = requests.filter((r) => normalizeStatus(r.status) === 'Delivered').length;
 
   return (
-    <div className="space-y-8 animate-fade-in pb-28">
+    <>
+      <div className="space-y-8 animate-fade-in pb-28">
       {/* Dashboard Top Header Bar */}
       <div className="bg-brand-card border border-brand-border p-8 rounded-2xl shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div>
@@ -1703,6 +1706,8 @@ function WaiterView() {
         </div>
       )}
 
+      </div>
+
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
       <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
         <button
@@ -1724,7 +1729,7 @@ function WaiterView() {
           <span className="text-[10px] tracking-wide font-sans">Completed</span>
         </button>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2244,7 +2249,8 @@ function ManagerView() {
   const bulkCalculatedCount = endNum >= startNum && startNum > 0 ? endNum - startNum + 1 : 0;
 
   return (
-    <div className="space-y-10 animate-fade-in pb-28">
+    <>
+      <div className="space-y-10 animate-fade-in pb-28">
       {/* Header Banner */}
       <div ref={analyticsRef} className="scroll-mt-24 bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -2775,6 +2781,8 @@ function ManagerView() {
         )}
       </div>
 
+      </div>
+
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
       <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
         <button
@@ -2805,6 +2813,6 @@ function ManagerView() {
           <span className="text-[10px] tracking-wide font-sans">QR Generator</span>
         </button>
       </div>
-    </div>
+    </>
   );
 }
