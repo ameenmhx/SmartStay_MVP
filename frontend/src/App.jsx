@@ -52,6 +52,8 @@ import {
   Home,
   ClipboardList,
   Asterisk,
+  Image,
+  UploadCloud,
 } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
@@ -235,6 +237,8 @@ function GuestView({ roomFromUrl }) {
   const [myRequests, setMyRequests] = useState([]);
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [activeCategoryTab, setActiveCategoryTab] = useState('ALL');
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loadingGallery, setLoadingGallery] = useState(true);
 
   // 5-Star Feedback State
   const [reviewRating, setReviewRating] = useState(5);
@@ -264,6 +268,27 @@ function GuestView({ roomFromUrl }) {
       sectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/gallery`);
+        if (res.ok) {
+          const result = await res.json();
+          if (result && result.data) {
+            setGalleryItems(result.data);
+          } else if (Array.isArray(result)) {
+            setGalleryItems(result);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching gallery items:', err);
+      } finally {
+        setLoadingGallery(false);
+      }
+    };
+    fetchGallery();
+  }, []);
 
   useEffect(() => {
     if (!hasRoomParam) return;
@@ -1261,7 +1286,7 @@ function GuestView({ roomFromUrl }) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
-          {[
+          {(galleryItems.length > 0 ? galleryItems : [
             {
               title: "Infinity Pool Oasis",
               description: "Heated multi-tiered pools overlooking the ocean sunset",
@@ -1292,11 +1317,11 @@ function GuestView({ roomFromUrl }) {
               description: "Handcrafted signature drinks by champion mixologists",
               url: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80"
             }
-          ].map((item, index) => (
-            <div key={index} className="group relative overflow-hidden rounded-2xl border border-slate-100/80 bg-slate-50 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+          ]).map((item, index) => (
+            <div key={item.id || index} className="group relative overflow-hidden rounded-2xl border border-slate-100/80 bg-slate-50 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
               <div className="aspect-video w-full overflow-hidden">
                 <img 
-                  src={item.url} 
+                  src={item.image_url || item.url} 
                   alt={item.title} 
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
@@ -1946,7 +1971,16 @@ function ManagerView() {
   const qrGeneratorRef = useRef(null);
   const liveFeedRef = useRef(null);
   const reviewsRef = useRef(null);
+  const galleryManageRef = useRef(null);
   const [activeNavTab, setActiveNavTab] = useState('analytics');
+
+  // Manage Gallery Form States
+  const [galleryTitle, setGalleryTitle] = useState('');
+  const [galleryDesc, setGalleryDesc] = useState('');
+  const [galleryFile, setGalleryFile] = useState(null);
+  const [galleryFilePreview, setGalleryFilePreview] = useState('');
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [galleryStatus, setGalleryStatus] = useState(null);
 
   const scrollToSection = (sectionRef, tabName) => {
     setActiveNavTab(tabName);
@@ -1969,6 +2003,7 @@ function ManagerView() {
           else if (entry.target === qrGeneratorRef.current) setActiveNavTab('qr');
           else if (entry.target === liveFeedRef.current) setActiveNavTab('feed');
           else if (entry.target === reviewsRef.current) setActiveNavTab('reviews');
+          else if (entry.target === galleryManageRef.current) setActiveNavTab('gallery');
         }
       });
     };
@@ -1978,11 +2013,90 @@ function ManagerView() {
     if (qrGeneratorRef.current) observer.observe(qrGeneratorRef.current);
     if (liveFeedRef.current) observer.observe(liveFeedRef.current);
     if (reviewsRef.current) observer.observe(reviewsRef.current);
+    if (galleryManageRef.current) observer.observe(galleryManageRef.current);
 
     return () => {
       observer.disconnect();
     };
   }, []);
+
+  // Manage Gallery upload handlers
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setGalleryFile(file);
+      setGalleryFilePreview(URL.createObjectURL(file));
+    } else {
+      setGalleryFile(null);
+      setGalleryFilePreview('');
+    }
+  };
+
+  const handleUploadGalleryItem = async (e) => {
+    e.preventDefault();
+    if (!galleryTitle.trim() || !galleryDesc.trim() || !galleryFile) {
+      setGalleryStatus({ type: 'error', text: 'Please fill in all fields and select an image.' });
+      return;
+    }
+
+    setUploadingGallery(true);
+    setGalleryStatus(null);
+
+    try {
+      const fileExt = galleryFile.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error: uploadError } = await supabase.storage
+        .from('gallery')
+        .upload(filePath, galleryFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('gallery')
+        .getPublicUrl(filePath);
+
+      const imageUrl = publicUrlData.publicUrl;
+
+      const response = await fetch(`${API_BASE_URL}/gallery`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: galleryTitle,
+          description: galleryDesc,
+          image_url: imageUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to register image in the database.');
+      }
+
+      setGalleryStatus({ type: 'success', text: 'Gallery item uploaded and registered successfully!' });
+      setGalleryTitle('');
+      setGalleryDesc('');
+      setGalleryFile(null);
+      setGalleryFilePreview('');
+      const fileInput = document.getElementById('gallery-file-input');
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    } catch (err) {
+      console.error('Upload process error:', err);
+      setGalleryStatus({ type: 'error', text: err.message || 'An error occurred during upload.' });
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
 
   // Single Print QR Code function
   const handlePrintQR = () => {
@@ -3023,6 +3137,102 @@ function ManagerView() {
         )}
       </div>
 
+      {/* Manage Gallery Section */}
+      <div ref={galleryManageRef} className="scroll-mt-24 bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border space-y-8 shadow-stripe">
+        <div className="flex items-center space-x-3.5 border-b border-brand-border pb-5">
+          <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
+            <Image className="w-6 h-6 text-brand-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl text-brand-heading font-semibold tracking-tight">Manage Gallery</h2>
+            <p className="text-xs text-brand-body mt-0.5">Upload new resort amenity images and experiences to the Guest View Gallery</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleUploadGalleryItem} className="space-y-6 max-w-2xl">
+          {galleryStatus && (
+            <div className={`p-4 rounded-xl border text-sm font-semibold flex items-center space-x-3 ${
+              galleryStatus.type === 'success' 
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                : 'bg-red-50 text-red-800 border-red-200'
+            }`}>
+              <span className="flex-1">{galleryStatus.text}</span>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label htmlFor="gallery-title-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+              Image Title
+            </label>
+            <input
+              id="gallery-title-input"
+              type="text"
+              value={galleryTitle}
+              onChange={(e) => setGalleryTitle(e.target.value)}
+              placeholder="e.g. Presidential Poolside Lounge"
+              className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="gallery-desc-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+              Description
+            </label>
+            <textarea
+              id="gallery-desc-input"
+              rows={3}
+              value={galleryDesc}
+              onChange={(e) => setGalleryDesc(e.target.value)}
+              placeholder="Provide a premium description of this facility or experience"
+              className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all resize-none"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+              Gallery Image File
+            </label>
+            <div className="relative border-2 border-dashed border-brand-border hover:border-brand-primary/40 rounded-xl p-6 transition-all bg-brand-surface flex flex-col items-center justify-center cursor-pointer text-center">
+              <input
+                id="gallery-file-input"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                required
+              />
+              <div className="space-y-2 flex flex-col items-center">
+                <UploadCloud className="w-10 h-10 text-brand-primary/60" />
+                <span className="text-xs text-brand-heading font-semibold">
+                  {galleryFile ? galleryFile.name : 'Click to select or drag & drop an image'}
+                </span>
+                <span className="text-[10px] text-brand-body block">Supports PNG, JPG, JPEG or WEBP (Max 5MB)</span>
+              </div>
+            </div>
+
+            {galleryFilePreview && (
+              <div className="mt-4 p-4 bg-white rounded-xl border border-brand-border flex items-center justify-center">
+                <img
+                  src={galleryFilePreview}
+                  alt="Preview"
+                  className="max-h-48 rounded-lg object-contain border border-brand-border shadow-sm"
+                />
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={uploadingGallery}
+            className="px-7 py-3 bg-brand-primary hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-all shadow-stripe hover:shadow-stripe-hover flex items-center space-x-2 border border-brand-border cursor-pointer active:scale-[0.98]"
+          >
+            <span>{uploadingGallery ? 'Uploading & Saving...' : 'Publish to Gallery'}</span>
+          </button>
+        </form>
+      </div>
+
       </div>
 
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
@@ -3062,6 +3272,15 @@ function ManagerView() {
         >
           <Star className="w-5 h-5" />
           <span className="text-[10px] tracking-wide font-sans">Reviews</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(galleryManageRef, 'gallery')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'gallery' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Image className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">Gallery</span>
         </button>
       </div>
     </>

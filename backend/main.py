@@ -75,6 +75,12 @@ class GuestReviewCreate(BaseModel):
     comment: str = ""
 
 
+class GalleryItem(BaseModel):
+    title: str
+    description: str
+    image_url: str
+
+
 # Root Health Check Endpoint
 @app.get("/")
 def read_root():
@@ -285,6 +291,52 @@ async def get_guest_reviews():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch reviews from Supabase: {str(e)}"
         )
+
+
+# GET /gallery - Fetch all gallery items from "resort_gallery" Supabase table, ordered by created_at descending
+@app.get("/gallery")
+async def get_gallery_items():
+    try:
+        response = supabase.table("resort_gallery").select("*").order("created_at", desc=True).execute()
+        return {
+            "status": "success",
+            "count": len(response.data) if response.data else 0,
+            "data": response.data or []
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch gallery items from Supabase: {str(e)}"
+        )
+
+
+# POST /gallery - Save a new gallery item to "resort_gallery" Supabase table
+@app.post("/gallery", status_code=status.HTTP_201_CREATED)
+async def create_gallery_item(item_data: GalleryItem):
+    payload = {
+        "title": item_data.title,
+        "description": item_data.description,
+        "image_url": item_data.image_url
+    }
+
+    try:
+        response = supabase.table("resort_gallery").insert(payload).execute()
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="No data returned from gallery item insertion."
+            )
+        inserted_record = response.data[0]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to insert gallery item into Supabase: {str(e)}"
+        )
+
+    return {
+        "message": "Gallery item added successfully",
+        "data": inserted_record
+    }
 
 
 # DELETE /room/{room_number}/checkout - Delete all service requests for a room and broadcast checkout event
