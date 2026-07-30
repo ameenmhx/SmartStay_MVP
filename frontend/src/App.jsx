@@ -1656,8 +1656,8 @@ function WaiterView() {
 
   const enableAudio = () => {
     if (audioRef.current) {
-      audioRef.current.load();
-      audioRef.current.play().then(() => audioRef.current.pause()).catch(console.error);
+      audioRef.current.muted = true;
+      audioRef.current.play().catch(console.error);
       setAudioEnabled(true);
       triggerToast('Audio alerts enabled!', 'success');
     }
@@ -1755,16 +1755,14 @@ function WaiterView() {
           triggerToast(msg, 'warning');
           if (audioEnabledRef.current) {
             if (audioRef.current) {
-              audioRef.current.currentTime = 0;
-              audioRef.current.play().catch(console.error);
+              audioRef.current.muted = false;
             }
             if (navigator.vibrate) {
               navigator.vibrate([500, 500, 500, 500, 500]);
             }
             setTimeout(() => {
               if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current.currentTime = 0;
+                audioRef.current.muted = true;
               }
             }, 5000);
           }
