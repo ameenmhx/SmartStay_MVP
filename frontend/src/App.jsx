@@ -1631,6 +1631,8 @@ function GuestView({ roomFromUrl }) {
 /* ==========================================================================
    WAITER VIEW COMPONENT (REAL-TIME DASHBOARD)
    ========================================================================== */
+const alarmAudio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
+
 function WaiterView() {
   const [requests, setRequests] = useState([]);
   const [nudgedRequestIds, setNudgedRequestIds] = useState({});
@@ -1641,7 +1643,6 @@ function WaiterView() {
   // Audio Context and Unlock Button State/Refs
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioEnabledRef = useRef(false);
-  const audioContextRef = useRef(null);
 
   const socketRef = useRef(null);
   const requestsStateRef = useRef([]);
@@ -1654,71 +1655,11 @@ function WaiterView() {
     audioEnabledRef.current = audioEnabled;
   }, [audioEnabled]);
 
-  // Initialize/Resume persistent AudioContext
   const enableAudio = () => {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!audioContextRef.current && AudioContextClass) {
-      audioContextRef.current = new AudioContextClass();
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.resume().then(() => {
-        setAudioEnabled(true);
-        triggerToast('Audio alerts enabled!', 'success');
-      }).catch((err) => {
-        console.error('Failed to resume AudioContext:', err);
-      });
-    } else {
-      triggerToast('AudioContext not supported in this browser.', 'error');
-    }
+    alarmAudio.play().then(() => alarmAudio.pause()).catch(e => console.error(e));
+    setAudioEnabled(true);
+    triggerToast('Audio alerts enabled!', 'success');
   };
-
-  // Robust 5-second alarm playing logic (type 'square', frequency 800Hz, pulsed volume)
-  const playAlarm = useCallback(() => {
-    if (!audioEnabledRef.current || !audioContextRef.current) return;
-    const context = audioContextRef.current;
-    try {
-      if (context.state === 'suspended') {
-        context.resume();
-      }
-      const osc = context.createOscillator();
-      const gainNode = context.createGain();
-
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(800, context.currentTime);
-
-      const now = context.currentTime;
-      gainNode.gain.setValueAtTime(0, now);
-
-      // Pulse volume on and off to simulate ringing
-      const pulseDuration = 0.25;
-      const pulseInterval = 0.5;
-      const totalDuration = 5.0;
-
-      for (let timeOffset = 0; timeOffset < totalDuration; timeOffset += pulseInterval) {
-        const pulseOnTime = now + timeOffset;
-        const pulseOffTime = pulseOnTime + pulseDuration;
-
-        if (pulseOnTime < now + totalDuration) {
-          gainNode.gain.setValueAtTime(0.15, pulseOnTime);
-          if (pulseOffTime < now + totalDuration) {
-            gainNode.gain.setValueAtTime(0, pulseOffTime);
-          } else {
-            gainNode.gain.setValueAtTime(0, now + totalDuration);
-          }
-        }
-      }
-
-      gainNode.gain.setValueAtTime(0, now + totalDuration);
-
-      osc.connect(gainNode);
-      gainNode.connect(context.destination);
-
-      osc.start(now);
-      osc.stop(now + totalDuration);
-    } catch (err) {
-      console.error('Error playing alarm:', err);
-    }
-  }, []);
 
   // Fetch all requests from backend API GET /requests
   const fetchRequests = useCallback(async () => {
@@ -1810,7 +1751,14 @@ function WaiterView() {
           const item = targetReq?.item_requested;
           const msg = room && item ? `🔔 Suite ${room} is nudging for: "${item}"!` : `🔔 Guest is nudging for a pending request!`;
           triggerToast(msg, 'warning');
-          playAlarm();
+          if (audioEnabledRef.current) {
+            alarmAudio.currentTime = 0;
+            alarmAudio.play();
+            setTimeout(() => {
+              alarmAudio.pause();
+              alarmAudio.currentTime = 0;
+            }, 5000);
+          }
         }
       } catch (e) {
         console.error('Error parsing WS message:', e);
@@ -1825,7 +1773,7 @@ function WaiterView() {
     ws.onclose = () => {
       setWsStatus('DISCONNECTED');
     };
-  }, [playAlarm]);
+  }, []);
 
   useEffect(() => {
     fetchRequests();
