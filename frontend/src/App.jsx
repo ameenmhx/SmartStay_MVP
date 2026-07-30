@@ -56,6 +56,7 @@ import {
   UploadCloud,
   Trash2,
 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
 
@@ -70,6 +71,61 @@ const normalizeStatus = (statusStr) => {
   if (s === 'in_progress' || s === 'on the way' || s === 'on_the_way') return 'On the Way';
   if (s === 'completed' || s === 'delivered') return 'Delivered';
   return statusStr;
+};
+
+// Global toast trigger utility using react-hot-toast
+const triggerToast = (msg, type = 'success') => {
+  const toastStyle = {
+    fontWeight: '600',
+    fontSize: '13px',
+    borderRadius: '12px',
+    padding: '12px 16px',
+    border: '1px solid',
+  };
+
+  if (type === 'error') {
+    toast.error(msg, {
+      duration: 4500,
+      style: {
+        ...toastStyle,
+        background: '#fef2f2',
+        color: '#b91c1c',
+        borderColor: '#fca5a5',
+      },
+    });
+  } else if (type === 'warning') {
+    toast(msg, {
+      duration: 4500,
+      icon: '⚠️',
+      style: {
+        ...toastStyle,
+        background: '#fffbeb',
+        color: '#b45309',
+        borderColor: '#fcd34d',
+      },
+    });
+  } else if (type === 'info') {
+    toast(msg, {
+      duration: 4500,
+      icon: 'ℹ️',
+      style: {
+        ...toastStyle,
+        background: '#f0f9ff',
+        color: '#0369a1',
+        borderColor: '#7dd3fc',
+      },
+    });
+  } else {
+    toast.success(msg, {
+      duration: 4500,
+      style: {
+        ...toastStyle,
+        background: '#ecfdf5',
+        color: '#047857',
+        borderColor: '#6ee7b7',
+      },
+    });
+  }
 };
 
 export default function App() {
@@ -114,6 +170,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-brand-surface text-brand-body flex flex-col font-sans selection:bg-brand-primary selection:text-white">
+      <Toaster position="top-right" reverseOrder={false} />
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20 px-6 lg:px-10 py-4 shadow-stripe">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -234,7 +291,6 @@ function GuestView({ roomFromUrl }) {
 
   const [customItem, setCustomItem] = useState('');
   const [loadingItem, setLoadingItem] = useState(null);
-  const [toast, setToast] = useState(null);
   const [myRequests, setMyRequests] = useState([]);
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [activeCategoryTab, setActiveCategoryTab] = useState('ALL');
@@ -494,11 +550,6 @@ function GuestView({ roomFromUrl }) {
       ],
     },
   ];
-
-  const triggerToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4500);
-  };
 
   // Fetch all requests for the currently selected room
   const fetchMyRequests = useCallback(async () => {
@@ -784,24 +835,6 @@ function GuestView({ roomFromUrl }) {
       )}
 
       <div className="max-w-5xl mx-auto space-y-10 pb-32 animate-fade-in">
-        {/* Toast Notification Banner */}
-        {toast && (
-          <div
-            className={`p-5 rounded-xl border flex items-center space-x-4 shadow-stripe backdrop-blur-xl transition-all transform animate-slide-up ${
-              toast.type === 'error'
-                ? 'bg-red-50 border-red-200 text-red-700'
-                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-            }`}
-          >
-            {toast.type === 'error' ? (
-              <AlertCircle className="w-6 h-6 text-red-500 shrink-0" />
-            ) : (
-              <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
-            )}
-            <div className="text-xs sm:text-sm font-semibold leading-relaxed">{toast.msg}</div>
-          </div>
-        )}
-
       {/* Time-Aware UI: Redesigned Premium Greeting Banner with Dynamic Background */}
       <div 
         ref={homeRef} 
@@ -1675,6 +1708,12 @@ function WaiterView() {
                 normalizeStatus(r.status) !== 'Delivered'
             )
           );
+          triggerToast('Completed and delivered requests cleared.', 'info');
+        } else if (parsed.type === 'nudge' || parsed.event === 'nudge') {
+          const room = parsed.room || parsed.room_number || parsed.data?.room_number || parsed.data?.room;
+          const item = parsed.item || parsed.item_requested || parsed.data?.item_requested || parsed.data?.item;
+          const msg = room && item ? `🔔 Room ${room} is nudging for: "${item}"!` : `🔔 Guest is nudging for a pending request!`;
+          triggerToast(msg, 'warning');
         }
       } catch (e) {
         console.error('Error parsing WS message:', e);
@@ -1717,6 +1756,25 @@ function WaiterView() {
       }
     } catch (err) {
       console.error('Failed to update status on server:', err);
+    }
+  };
+
+  // Clear Completed Requests API call
+  const handleClearCompleted = async () => {
+    if (!window.confirm("Are you sure you want to clear all completed and delivered requests?")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/requests/completed`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        triggerToast('Completed requests cleared successfully.', 'success');
+      } else {
+        console.error(`Clear completed API failed with status ${res.status}`);
+        triggerToast('Failed to clear completed requests.', 'error');
+      }
+    } catch (err) {
+      console.error('Clear completed error:', err);
+      triggerToast(`Error clearing completed requests: ${err.message}`, 'error');
     }
   };
 
@@ -2731,6 +2789,7 @@ function ManagerView() {
                 normalizeStatus(r.status) !== 'Delivered'
             )
           );
+          triggerToast('Completed and delivered requests cleared.', 'info');
           setActivityLogs((prev) => [
             {
               id: Date.now() + Math.random(),
@@ -2738,6 +2797,21 @@ function ManagerView() {
               timestamp: new Date().toLocaleTimeString(),
               message: `Completed/delivered requests cleared from dashboard`,
               status: 'Cleared',
+            },
+            ...prev.slice(0, 49),
+          ]);
+        } else if (parsed.type === 'nudge' || parsed.event === 'nudge') {
+          const room = parsed.room || parsed.room_number || parsed.data?.room_number || parsed.data?.room;
+          const item = parsed.item || parsed.item_requested || parsed.data?.item_requested || parsed.data?.item;
+          const msg = room && item ? `🔔 Room ${room} is nudging for: "${item}"!` : `🔔 Guest is nudging for a pending request!`;
+          triggerToast(msg, 'warning');
+          setActivityLogs((prev) => [
+            {
+              id: Date.now() + Math.random(),
+              type: 'NUDGE',
+              timestamp: new Date().toLocaleTimeString(),
+              message: `Guest in Room ${room || 'unknown'} nudged for "${item || 'requested item'}"`,
+              status: 'Nudged',
             },
             ...prev.slice(0, 49),
           ]);
