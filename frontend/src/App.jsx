@@ -255,6 +255,7 @@ function GuestView({ roomFromUrl }) {
   const homeRef = useRef(null);
   const servicesRef = useRef(null);
   const requestsRef = useRef(null);
+  const galleryRef = useRef(null);
   const feedbackRef = useRef(null);
 
   const scrollToSection = (sectionRef, tabName) => {
@@ -278,6 +279,7 @@ function GuestView({ roomFromUrl }) {
           if (entry.target === homeRef.current) setActiveNavTab('home');
           else if (entry.target === servicesRef.current) setActiveNavTab('services');
           else if (entry.target === requestsRef.current) setActiveNavTab('requests');
+          else if (entry.target === galleryRef.current) setActiveNavTab('gallery');
           else if (entry.target === feedbackRef.current) setActiveNavTab('feedback');
         }
       });
@@ -288,6 +290,7 @@ function GuestView({ roomFromUrl }) {
     if (homeRef.current) observer.observe(homeRef.current);
     if (servicesRef.current) observer.observe(servicesRef.current);
     if (requestsRef.current) observer.observe(requestsRef.current);
+    if (galleryRef.current) observer.observe(galleryRef.current);
     if (feedbackRef.current) observer.observe(feedbackRef.current);
 
     return () => {
@@ -1177,7 +1180,9 @@ function GuestView({ roomFromUrl }) {
                           isEmergency ? 'bg-red-500' : 'bg-brand-primary'
                         }`}
                         style={{
-                          width: isDelivered 
+                          width: isPending
+                            ? '0%'
+                            : isDelivered 
                             ? '100%' 
                             : isOnTheWay 
                             ? '50%' 
@@ -1188,8 +1193,8 @@ function GuestView({ roomFromUrl }) {
                       {/* Stepper Dots */}
                       {[
                         { label: 'Received', key: 'received', active: true, current: isPending },
-                        { label: 'En Route', key: 'enroute', active: isOnTheWay || isDelivered, current: isOnTheWay },
-                        { label: 'Fulfilled', key: 'fulfilled', active: isDelivered, current: isDelivered }
+                        { label: 'En Route', key: 'enroute', active: !isPending && (isOnTheWay || isDelivered), current: isOnTheWay },
+                        { label: 'Fulfilled', key: 'fulfilled', active: !isPending && isDelivered, current: isDelivered }
                       ].map((step, sIdx) => {
                         const stepActive = step.active;
                         const stepCurrent = step.current;
@@ -1239,6 +1244,70 @@ function GuestView({ roomFromUrl }) {
             })}
           </div>
         )}
+      </div>
+
+      {/* ==========================================================================
+         PREMIUM GALLERY SECTION (Discover Resort Amenities)
+         ========================================================================== */}
+      <div ref={galleryRef} className="scroll-mt-24 bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 space-y-6 shadow-sm relative overflow-hidden">
+        <div className="flex items-center space-x-3.5 border-b border-slate-100 pb-5">
+          <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
+            <Sparkles className="w-6 h-6 text-brand-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl text-slate-800 font-semibold tracking-tight">Discover Resort Gallery</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Explore our premium facilities and luxury experiences</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+          {[
+            {
+              title: "Infinity Pool Oasis",
+              description: "Heated multi-tiered pools overlooking the ocean sunset",
+              url: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+              title: "Serene Spa Haven",
+              description: "Traditional therapeutic massages and mineral hot springs",
+              url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+              title: "Michelin Gourmet Dining",
+              description: "Award-winning French-Asian fusion under the stars",
+              url: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+              title: "Presidential Ocean Suite",
+              description: "Spacious master suites with high-end automated luxury",
+              url: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+              title: "Private Beach Lounge",
+              description: "Exclusive cabanas and sunset cocktails on pristine sands",
+              url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+              title: "Luminous Cocktail Bar",
+              description: "Handcrafted signature drinks by champion mixologists",
+              url: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80"
+            }
+          ].map((item, index) => (
+            <div key={index} className="group relative overflow-hidden rounded-2xl border border-slate-100/80 bg-slate-50 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+              <div className="aspect-video w-full overflow-hidden">
+                <img 
+                  src={item.url} 
+                  alt={item.title} 
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+              </div>
+              <div className="p-4 space-y-1 bg-white border-t border-slate-50 relative z-10">
+                <h3 className="font-semibold text-slate-800 text-sm">{item.title}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{item.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ==========================================================================
@@ -1421,6 +1490,15 @@ function GuestView({ roomFromUrl }) {
         >
           <ClipboardList className="w-5 h-5" />
           <span className="text-[10px] tracking-wide">Requests</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(galleryRef, 'gallery')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'gallery' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Sparkles className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide">Gallery</span>
         </button>
         <button
           onClick={() => scrollToSection(feedbackRef, 'feedback')}
