@@ -688,7 +688,7 @@ function GuestView({ roomFromUrl }) {
                   setShowSosModal(false);
                   await handleOrder('EMERGENCY', true);
                 }}
-                className="flex-1 px-5 py-3 rounded-xl bg-red-650 hover:bg-red-750 text-white text-xs font-bold transition-all duration-200 shadow-stripe cursor-pointer"
+                className="flex-1 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all duration-200 shadow-stripe cursor-pointer"
               >
                 Yes, Dispatch SOS
               </button>
@@ -1073,20 +1073,7 @@ function GuestView({ roomFromUrl }) {
               const isDelivered = status === 'Delivered';
               const isEmergency = (req.item_requested || '').toUpperCase().includes('EMERGENCY');
 
-              return isDelivered ? (
-                <div
-                  key={req.id || idx}
-                  className="bg-slate-50/40 border border-slate-200/50 rounded-xl p-3.5 px-4 flex items-center justify-between transition-all duration-300 animate-slide-up"
-                >
-                  <span className="text-xs font-semibold text-slate-400 line-clamp-1">{req.item_requested}</span>
-                  <div className="flex items-center space-x-1.5 shrink-0 text-emerald-600">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Delivered</span>
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
-                      <Check className="w-3.5 h-3.5 text-emerald-650 font-bold stroke-[3]" />
-                    </div>
-                  </div>
-                </div>
-              ) : (
+              return (
                 <div
                   key={req.id || idx}
                   className={`bg-white border rounded-2xl p-6 flex flex-col justify-between space-y-5 shadow-sm transition-all duration-305 animate-slide-up ${
@@ -1146,7 +1133,7 @@ function GuestView({ roomFromUrl }) {
                           width: isEmergency 
                             ? '100%' 
                             : isDelivered 
-                            ? 'calc(100% - 2rem)' 
+                            ? '100%' 
                             : isOnTheWay 
                             ? '50%' 
                             : '0%'
@@ -1169,9 +1156,7 @@ function GuestView({ roomFromUrl }) {
                                 isEmergency
                                   ? 'bg-red-500 text-white ring-4 ring-red-100'
                                   : stepActive
-                                  ? stepCurrent
-                                    ? 'bg-emerald-500 text-white ring-4 ring-emerald-100'
-                                    : 'bg-emerald-50 text-white shadow-sm'
+                                  ? 'bg-emerald-500 text-white ring-4 ring-emerald-100'
                                   : 'bg-white text-slate-400 border border-slate-200'
                               }`}
                             >
@@ -1408,7 +1393,7 @@ function GuestView({ roomFromUrl }) {
 function WaiterView() {
   const [requests, setRequests] = useState([]);
   const [wsStatus, setWsStatus] = useState('CONNECTING');
-  const [filter, setFilter] = useState('ALL'); // 'ALL' | 'Pending' | 'On the Way' | 'Delivered'
+  const [filter, setFilter] = useState('Pending'); // 'ALL' | 'Pending' | 'On the Way' | 'Delivered'
   const [newIncomingCount, setNewIncomingCount] = useState(0);
 
   const socketRef = useRef(null);
@@ -1809,6 +1794,7 @@ function WaiterView() {
    ========================================================================== */
 function ManagerView() {
   const [requests, setRequests] = useState([]);
+  const [managerFilter, setManagerFilter] = useState('ALL'); // 'ALL' | 'Pending' | 'On the Way' | 'Delivered'
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [activityLogs, setActivityLogs] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -2318,6 +2304,11 @@ function ManagerView() {
   }, [fetchRequests, fetchReviews, connectWebSocket]);
 
   // Analytics Metrics calculations
+  const filteredRequests = requests.filter((req) => {
+    if (managerFilter === 'ALL') return true;
+    return normalizeStatus(req.status).toLowerCase() === managerFilter.toLowerCase();
+  });
+
   const totalOrders = requests.length;
   const pendingOrders = requests.filter((r) => normalizeStatus(r.status) === 'Pending').length;
   const completedOrders = requests.filter(
@@ -2688,20 +2679,57 @@ function ManagerView() {
           </span>
         </div>
 
+        {/* Filter Pills */}
+        <div className="flex items-center justify-between border-b border-brand-border pb-4">
+          <div className="flex space-x-3">
+            {['ALL', 'Pending', 'On the Way', 'Delivered'].map((tab) => (
+              <button
+                key={tab}
+                id={`manager-filter-tab-${tab.toLowerCase().replace(/\s+/g, '-')}`}
+                onClick={() => setManagerFilter(tab)}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer ${
+                  managerFilter === tab
+                    ? 'bg-brand-primary text-white shadow-stripe'
+                    : 'bg-brand-card text-brand-body hover:text-brand-heading hover:bg-brand-surface border border-brand-border'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs text-brand-body font-mono hidden sm:inline">
+            Showing {filteredRequests.length} of {requests.length} active records
+          </span>
+        </div>
+
         {/* Live Hotel Requests Activity List */}
-        {requests.length === 0 ? (
+        {filteredRequests.length === 0 ? (
           <div className="text-center py-12 space-y-3 bg-brand-surface rounded-xl border border-brand-border p-8">
             <div className="w-12 h-12 mx-auto rounded-xl bg-brand-card border border-brand-border flex items-center justify-center text-brand-body">
               <Layers3 className="w-6 h-6 text-brand-body" />
             </div>
-            <p className="text-sm font-semibold text-brand-heading">No resort activity recorded yet</p>
-            <p className="text-xs text-brand-body max-w-sm mx-auto">
-              Any order placed by guests or updated by waiters will instantly show up in this live feed.
+            <p className="text-sm font-semibold text-brand-heading">
+              {managerFilter === 'ALL'
+                ? 'No resort activity recorded yet'
+                : `No requests with status "${managerFilter}"`}
             </p>
+            <p className="text-xs text-brand-body max-w-sm mx-auto">
+              {managerFilter === 'ALL'
+                ? 'Any order placed by guests or updated by waiters will instantly show up in this live feed.'
+                : `There are currently no requests in the live feed matching "${managerFilter}".`}
+            </p>
+            {managerFilter !== 'ALL' && (
+              <button
+                onClick={() => setManagerFilter('ALL')}
+                className="mt-2 px-4 py-2 bg-brand-card border border-brand-border text-brand-primary rounded-lg text-xs font-bold transition-all hover:bg-brand-surface shadow-sm cursor-pointer"
+              >
+                Clear Filter
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
-            {requests.map((req, idx) => {
+            {filteredRequests.map((req, idx) => {
               const status = normalizeStatus(req.status);
               const isPending = status === 'Pending';
               const isOnTheWay = status === 'On the Way';
