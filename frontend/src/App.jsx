@@ -112,7 +112,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-brand-surface text-brand-body flex flex-col font-sans selection:bg-brand-primary selection:text-white">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-white border-b border-brand-border px-6 lg:px-10 py-4 shadow-stripe">
+      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20 px-6 lg:px-10 py-4 shadow-stripe">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-3.5">
             <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center shadow-stripe">
@@ -246,6 +246,7 @@ function GuestView({ roomFromUrl }) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
   const [showSosModal, setShowSosModal] = useState(false);
+  const [itemToConfirm, setItemToConfirm] = useState(null);
 
   const socketRef = useRef(null);
 
@@ -558,7 +559,7 @@ function GuestView({ roomFromUrl }) {
     }
   };
 
-  const handleOrder = async (itemName, isEmergency = false) => {
+  const dispatchOrder = async (itemName, isEmergency = false) => {
     if (!itemName.trim()) return;
     setLoadingItem(itemName);
 
@@ -603,6 +604,15 @@ function GuestView({ roomFromUrl }) {
       triggerToast(`Failed to send request: ${err.message}.`, 'error');
     } finally {
       setLoadingItem(null);
+    }
+  };
+
+  const handleOrder = (itemName, isEmergency = false) => {
+    if (!itemName.trim()) return;
+    if (isEmergency) {
+      dispatchOrder(itemName, isEmergency);
+    } else {
+      setItemToConfirm(itemName);
     }
   };
 
@@ -696,6 +706,43 @@ function GuestView({ roomFromUrl }) {
           </div>
         </div>
       )}
+
+      {itemToConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-all duration-300">
+          <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 text-center transform scale-100 transition-all duration-200">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center text-brand-primary shadow-stripe">
+              <ConciergeBell className="w-8 h-8 text-brand-primary" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-slate-800 tracking-tight">Confirm Request</h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                Would you like to request <span className="font-bold text-slate-800">{itemToConfirm}</span> for Room <span className="font-bold text-slate-800">{selectedRoom}</span>?
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                id="cancel-order-btn"
+                onClick={() => setItemToConfirm(null)}
+                className="flex-1 px-5 py-3 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-xs font-bold transition-all duration-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                id="confirm-order-btn"
+                onClick={() => {
+                  const item = itemToConfirm;
+                  setItemToConfirm(null);
+                  dispatchOrder(item);
+                }}
+                className="flex-1 px-5 py-3 rounded-xl bg-brand-primary hover:bg-slate-800 text-white text-xs font-bold transition-all duration-200 shadow-stripe cursor-pointer"
+              >
+                Confirm Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto space-y-10 pb-32 animate-fade-in">
         {/* Toast Notification Banner */}
         {toast && (
@@ -1122,17 +1169,15 @@ function GuestView({ roomFromUrl }) {
                   <div className="space-y-4 pt-4 border-t border-slate-100">
                     <div className="relative flex items-center justify-between mt-2 px-1">
                       {/* Tracker Track Background */}
-                      <div className="absolute left-4 right-4 top-3 -translate-y-1/2 h-1 bg-slate-100 rounded-full z-0"></div>
+                      <div className="absolute left-4 right-4 top-3 -translate-y-1/2 h-1 bg-gray-200 rounded-full z-0"></div>
                       
                       {/* Tracker Track Active Progress */}
                       <div 
                         className={`absolute left-4 top-3 -translate-y-1/2 h-1 rounded-full z-0 transition-all duration-500 ${
-                          isEmergency ? 'bg-red-500' : 'bg-emerald-500'
+                          isEmergency ? 'bg-red-500' : 'bg-brand-primary'
                         }`}
                         style={{
-                          width: isEmergency 
-                            ? '100%' 
-                            : isDelivered 
+                          width: isDelivered 
                             ? '100%' 
                             : isOnTheWay 
                             ? '50%' 
@@ -1146,25 +1191,29 @@ function GuestView({ roomFromUrl }) {
                         { label: 'En Route', key: 'enroute', active: isOnTheWay || isDelivered, current: isOnTheWay },
                         { label: 'Fulfilled', key: 'fulfilled', active: isDelivered, current: isDelivered }
                       ].map((step, sIdx) => {
-                        const stepActive = isEmergency || step.active;
-                        const stepCurrent = !isEmergency && step.current;
+                        const stepActive = step.active;
+                        const stepCurrent = step.current;
                         
                         return (
                           <div key={step.key} className="flex flex-col items-center z-10 relative">
                             <div 
                               className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-extrabold transition-all duration-305 ${
-                                isEmergency
-                                  ? 'bg-red-500 text-white ring-4 ring-red-100'
-                                  : stepActive
-                                  ? 'bg-emerald-500 text-white ring-4 ring-emerald-100'
-                                  : 'bg-white text-slate-400 border border-slate-200'
+                                stepActive
+                                  ? isEmergency
+                                    ? 'bg-red-500 text-white ring-4 ring-red-100'
+                                    : 'bg-brand-primary text-white ring-4 ring-slate-100'
+                                  : 'bg-gray-200 text-gray-400 border border-transparent'
                               }`}
                             >
                               {stepActive && !stepCurrent ? '✓' : sIdx + 1}
                             </div>
                             <span 
                               className={`text-[9px] font-bold mt-2 transition-colors duration-300 ${
-                                stepActive ? 'text-slate-800' : 'text-slate-400'
+                                stepActive
+                                  ? isEmergency
+                                    ? 'text-red-700'
+                                    : 'text-brand-primary'
+                                  : 'text-gray-400'
                               }`}
                             >
                               {step.label}
@@ -1345,7 +1394,7 @@ function GuestView({ roomFromUrl }) {
     </div>
 
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
-      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
+      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/70 backdrop-blur-xl border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
         <button
           onClick={() => scrollToSection(homeRef, 'home')}
           className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
@@ -1622,7 +1671,7 @@ function WaiterView() {
       {/* Filter Tabs */}
       <div className="flex items-center justify-between border-b border-brand-border pb-4">
         <div className="flex space-x-3">
-          {['ALL', 'Pending', 'On the Way', 'Delivered'].map((tab) => (
+          {['Pending', 'On the Way', 'Delivered', 'ALL'].map((tab) => (
             <button
               key={tab}
               id={`filter-tab-${tab.toLowerCase().replace(/\s+/g, '-')}`}
@@ -1765,7 +1814,7 @@ function WaiterView() {
       </div>
 
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
-      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
+      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/70 backdrop-blur-xl border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
         <button
           onClick={() => setFilter('ALL')}
           className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
@@ -1818,6 +1867,7 @@ function ManagerView() {
   const analyticsRef = useRef(null);
   const qrGeneratorRef = useRef(null);
   const liveFeedRef = useRef(null);
+  const reviewsRef = useRef(null);
   const [activeNavTab, setActiveNavTab] = useState('analytics');
 
   const scrollToSection = (sectionRef, tabName) => {
@@ -1840,6 +1890,7 @@ function ManagerView() {
           if (entry.target === analyticsRef.current) setActiveNavTab('analytics');
           else if (entry.target === qrGeneratorRef.current) setActiveNavTab('qr');
           else if (entry.target === liveFeedRef.current) setActiveNavTab('feed');
+          else if (entry.target === reviewsRef.current) setActiveNavTab('reviews');
         }
       });
     };
@@ -1848,6 +1899,7 @@ function ManagerView() {
     if (analyticsRef.current) observer.observe(analyticsRef.current);
     if (qrGeneratorRef.current) observer.observe(qrGeneratorRef.current);
     if (liveFeedRef.current) observer.observe(liveFeedRef.current);
+    if (reviewsRef.current) observer.observe(reviewsRef.current);
 
     return () => {
       observer.disconnect();
@@ -2807,7 +2859,7 @@ function ManagerView() {
       </div>
 
       {/* Guest Feedback & Reviews Section */}
-      <div className="bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl space-y-6 shadow-stripe">
+      <div ref={reviewsRef} className="scroll-mt-24 bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl space-y-6 shadow-stripe">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
           <div className="flex items-center space-x-3.5">
             <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
@@ -2896,7 +2948,7 @@ function ManagerView() {
       </div>
 
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
-      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
+      <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/70 backdrop-blur-xl border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
         <button
           onClick={() => scrollToSection(liveFeedRef, 'feed')}
           className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
@@ -2923,6 +2975,15 @@ function ManagerView() {
         >
           <QrCode className="w-5 h-5" />
           <span className="text-[10px] tracking-wide font-sans">QR Generator</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(reviewsRef, 'reviews')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'reviews' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Star className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">Reviews</span>
         </button>
       </div>
     </>
