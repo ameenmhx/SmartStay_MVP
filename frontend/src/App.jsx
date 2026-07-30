@@ -1656,6 +1656,7 @@ function WaiterView() {
 
   const enableAudio = () => {
     if (audioRef.current) {
+      audioRef.current.load();
       audioRef.current.play().then(() => audioRef.current.pause()).catch(console.error);
       setAudioEnabled(true);
       triggerToast('Audio alerts enabled!', 'success');
@@ -1755,12 +1756,17 @@ function WaiterView() {
           if (audioEnabledRef.current) {
             if (audioRef.current) {
               audioRef.current.currentTime = 0;
-              audioRef.current.play();
-              setTimeout(() => {
+              audioRef.current.play().catch(console.error);
+            }
+            if (navigator.vibrate) {
+              navigator.vibrate([500, 500, 500, 500, 500]);
+            }
+            setTimeout(() => {
+              if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.currentTime = 0;
-              }, 5000);
-            }
+              }
+            }, 5000);
           }
         }
       } catch (e) {
@@ -2120,7 +2126,7 @@ function WaiterView() {
         </div>
       )}
 
-        <audio ref={audioRef} src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto" loop />
+        <audio ref={audioRef} src="https://s3.amazonaws.com/freecodecamp/simonSound1.mp3" preload="auto" loop />
       </div>
 
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
