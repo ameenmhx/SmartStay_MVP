@@ -61,7 +61,6 @@ import {
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
-import { Howl } from 'howler';
 
 const API_BASE_URL = 'https://smartstay-backend-3wbb.onrender.com';
 const WS_URL = 'wss://smartstay-backend-3wbb.onrender.com/ws/waiter';
@@ -130,8 +129,6 @@ const triggerToast = (msg, type = 'success') => {
     });
   }
 };
-
-const alertSound = new Howl({ src: ['https://s3.amazonaws.com/freecodecamp/simonSound1.mp3'], loop: true, volume: 1.0 });
 
 export default function App() {
   const [activeView, setActiveView] = useState('guest'); // 'guest' | 'waiter' | 'manager'
@@ -1657,10 +1654,9 @@ function WaiterView() {
   }, [audioEnabled]);
 
   const enableAudio = () => {
-    alertSound.play();
-    setTimeout(() => alertSound.stop(), 50);
+    const initVoice = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(initVoice);
     setAudioEnabled(true);
-    triggerToast('Audio alerts enabled!', 'success');
   };
 
   // Fetch all requests from backend API GET /requests
@@ -1754,13 +1750,13 @@ function WaiterView() {
           const msg = room && item ? `🔔 Suite ${room} is nudging for: "${item}"!` : `🔔 Guest is nudging for a pending request!`;
           triggerToast(msg, 'warning');
           if (audioEnabledRef.current) {
-            alertSound.play();
+            const alertVoice = new SpeechSynthesisUtterance('Attention! Staff pinged for pending order.');
+            alertVoice.rate = 1.0;
+            alertVoice.pitch = 1.2;
+            window.speechSynthesis.speak(alertVoice);
             if (navigator.vibrate) {
               navigator.vibrate([500, 500, 500, 500, 500]);
             }
-            setTimeout(() => {
-              alertSound.stop();
-            }, 5000);
           }
         }
       } catch (e) {
