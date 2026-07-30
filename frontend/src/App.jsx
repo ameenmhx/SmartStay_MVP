@@ -56,6 +56,7 @@ import {
   Image,
   UploadCloud,
   Trash2,
+  Speaker,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
@@ -1637,12 +1638,87 @@ function WaiterView() {
   const [filter, setFilter] = useState('Pending'); // 'ALL' | 'Pending' | 'On the Way' | 'Delivered'
   const [newIncomingCount, setNewIncomingCount] = useState(0);
 
+  // Audio Context and Unlock Button State/Refs
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioEnabledRef = useRef(false);
+  const audioContextRef = useRef(null);
+
   const socketRef = useRef(null);
   const requestsStateRef = useRef([]);
 
   useEffect(() => {
     requestsStateRef.current = requests;
   }, [requests]);
+
+  useEffect(() => {
+    audioEnabledRef.current = audioEnabled;
+  }, [audioEnabled]);
+
+  // Initialize/Resume persistent AudioContext
+  const enableAudio = () => {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!audioContextRef.current && AudioContextClass) {
+      audioContextRef.current = new AudioContextClass();
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.resume().then(() => {
+        setAudioEnabled(true);
+        triggerToast('Audio alerts enabled!', 'success');
+      }).catch((err) => {
+        console.error('Failed to resume AudioContext:', err);
+      });
+    } else {
+      triggerToast('AudioContext not supported in this browser.', 'error');
+    }
+  };
+
+  // Robust 5-second alarm playing logic (type 'square', frequency 800Hz, pulsed volume)
+  const playAlarm = useCallback(() => {
+    if (!audioEnabledRef.current || !audioContextRef.current) return;
+    const context = audioContextRef.current;
+    try {
+      if (context.state === 'suspended') {
+        context.resume();
+      }
+      const osc = context.createOscillator();
+      const gainNode = context.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(800, context.currentTime);
+
+      const now = context.currentTime;
+      gainNode.gain.setValueAtTime(0, now);
+
+      // Pulse volume on and off to simulate ringing
+      const pulseDuration = 0.25;
+      const pulseInterval = 0.5;
+      const totalDuration = 5.0;
+
+      for (let timeOffset = 0; timeOffset < totalDuration; timeOffset += pulseInterval) {
+        const pulseOnTime = now + timeOffset;
+        const pulseOffTime = pulseOnTime + pulseDuration;
+
+        if (pulseOnTime < now + totalDuration) {
+          gainNode.gain.setValueAtTime(0.15, pulseOnTime);
+          if (pulseOffTime < now + totalDuration) {
+            gainNode.gain.setValueAtTime(0, pulseOffTime);
+          } else {
+            gainNode.gain.setValueAtTime(0, now + totalDuration);
+          }
+        }
+      }
+
+      gainNode.gain.setValueAtTime(0, now + totalDuration);
+
+      osc.connect(gainNode);
+      gainNode.connect(context.destination);
+
+      osc.start(now);
+      osc.stop(now + totalDuration);
+    } catch (err) {
+      console.error('Error playing alarm:', err);
+    }
+  }, []);
 
   // Fetch all requests from backend API GET /requests
   const fetchRequests = useCallback(async () => {
@@ -1727,13 +1803,14 @@ function WaiterView() {
                 delete copy[nudgedIdStr];
                 return copy;
               });
-            }, 4000);
+            }, 5000);
           }
           const targetReq = requestsStateRef.current.find((r) => String(r.id) === String(nudgedId));
           const room = targetReq?.room_number;
           const item = targetReq?.item_requested;
           const msg = room && item ? `🔔 Suite ${room} is nudging for: "${item}"!` : `🔔 Guest is nudging for a pending request!`;
           triggerToast(msg, 'warning');
+          playAlarm();
         }
       } catch (e) {
         console.error('Error parsing WS message:', e);
@@ -1748,7 +1825,7 @@ function WaiterView() {
     ws.onclose = () => {
       setWsStatus('DISCONNECTED');
     };
-  }, []);
+  }, [playAlarm]);
 
   useEffect(() => {
     fetchRequests();
@@ -1824,8 +1901,30 @@ function WaiterView() {
           <p className="text-xs sm:text-sm text-brand-body mt-1">Accept &amp; fulfill live incoming guest orders via real-time WebSocket telemetry</p>
         </div>
 
-        {/* Live WS Connection Status Badge */}
-        <div className="flex items-center space-x-3">
+        {/* Live WS Connection Status and Audio Badge */}
+        <div className="flex flex-wrap items-center gap-3">
+          {audioEnabled ? (
+            <button
+              id="enable-audio-btn"
+              onClick={enableAudio}
+              className="p-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 rounded-lg transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-stripe cursor-pointer"
+              title="Audio Alerts Enabled"
+            >
+              <Speaker className="w-4 h-4" />
+              <span>Audio Alerts Enabled</span>
+            </button>
+          ) : (
+            <button
+              id="enable-audio-btn"
+              onClick={enableAudio}
+              className="p-2 px-4 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-stripe cursor-pointer"
+              title="Enable Audio Alerts"
+            >
+              <Speaker className="w-4 h-4 text-brand-primary animate-pulse" />
+              <span>Enable Audio Alerts</span>
+            </button>
+          )}
+
           <div
             className={`px-4 py-1.5 rounded-lg border text-xs font-semibold flex items-center space-x-2 ${
               wsStatus === 'CONNECTED'
