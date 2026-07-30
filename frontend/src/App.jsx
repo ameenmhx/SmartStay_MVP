@@ -61,6 +61,7 @@ import {
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
+import { Howl } from 'howler';
 
 const API_BASE_URL = 'https://smartstay-backend-3wbb.onrender.com';
 const WS_URL = 'wss://smartstay-backend-3wbb.onrender.com/ws/waiter';
@@ -129,6 +130,8 @@ const triggerToast = (msg, type = 'success') => {
     });
   }
 };
+
+const alertSound = new Howl({ src: ['https://s3.amazonaws.com/freecodecamp/simonSound1.mp3'], loop: true, volume: 1.0 });
 
 export default function App() {
   const [activeView, setActiveView] = useState('guest'); // 'guest' | 'waiter' | 'manager'
@@ -1641,7 +1644,6 @@ function WaiterView() {
   // Audio Context and Unlock Button State/Refs
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioEnabledRef = useRef(false);
-  const audioRef = useRef(null);
 
   const socketRef = useRef(null);
   const requestsStateRef = useRef([]);
@@ -1655,12 +1657,10 @@ function WaiterView() {
   }, [audioEnabled]);
 
   const enableAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = true;
-      audioRef.current.play().catch(console.error);
-      setAudioEnabled(true);
-      triggerToast('Audio alerts enabled!', 'success');
-    }
+    alertSound.play();
+    setTimeout(() => alertSound.stop(), 50);
+    setAudioEnabled(true);
+    triggerToast('Audio alerts enabled!', 'success');
   };
 
   // Fetch all requests from backend API GET /requests
@@ -1754,16 +1754,12 @@ function WaiterView() {
           const msg = room && item ? `🔔 Suite ${room} is nudging for: "${item}"!` : `🔔 Guest is nudging for a pending request!`;
           triggerToast(msg, 'warning');
           if (audioEnabledRef.current) {
-            if (audioRef.current) {
-              audioRef.current.muted = false;
-            }
+            alertSound.play();
             if (navigator.vibrate) {
               navigator.vibrate([500, 500, 500, 500, 500]);
             }
             setTimeout(() => {
-              if (audioRef.current) {
-                audioRef.current.muted = true;
-              }
+              alertSound.stop();
             }, 5000);
           }
         }
@@ -2124,7 +2120,6 @@ function WaiterView() {
         </div>
       )}
 
-        <audio ref={audioRef} src="https://s3.amazonaws.com/freecodecamp/simonSound1.mp3" preload="auto" loop />
       </div>
 
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
