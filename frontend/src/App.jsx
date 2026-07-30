@@ -1631,8 +1631,6 @@ function GuestView({ roomFromUrl }) {
 /* ==========================================================================
    WAITER VIEW COMPONENT (REAL-TIME DASHBOARD)
    ========================================================================== */
-const alarmAudio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
-
 function WaiterView() {
   const [requests, setRequests] = useState([]);
   const [nudgedRequestIds, setNudgedRequestIds] = useState({});
@@ -1643,6 +1641,7 @@ function WaiterView() {
   // Audio Context and Unlock Button State/Refs
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioEnabledRef = useRef(false);
+  const audioRef = useRef(null);
 
   const socketRef = useRef(null);
   const requestsStateRef = useRef([]);
@@ -1656,9 +1655,11 @@ function WaiterView() {
   }, [audioEnabled]);
 
   const enableAudio = () => {
-    alarmAudio.play().then(() => alarmAudio.pause()).catch(e => console.error(e));
-    setAudioEnabled(true);
-    triggerToast('Audio alerts enabled!', 'success');
+    if (audioRef.current) {
+      audioRef.current.play().then(() => audioRef.current.pause()).catch(console.error);
+      setAudioEnabled(true);
+      triggerToast('Audio alerts enabled!', 'success');
+    }
   };
 
   // Fetch all requests from backend API GET /requests
@@ -1752,12 +1753,14 @@ function WaiterView() {
           const msg = room && item ? `🔔 Suite ${room} is nudging for: "${item}"!` : `🔔 Guest is nudging for a pending request!`;
           triggerToast(msg, 'warning');
           if (audioEnabledRef.current) {
-            alarmAudio.currentTime = 0;
-            alarmAudio.play();
-            setTimeout(() => {
-              alarmAudio.pause();
-              alarmAudio.currentTime = 0;
-            }, 5000);
+            if (audioRef.current) {
+              audioRef.current.currentTime = 0;
+              audioRef.current.play();
+              setTimeout(() => {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+              }, 5000);
+            }
           }
         }
       } catch (e) {
@@ -2117,6 +2120,7 @@ function WaiterView() {
         </div>
       )}
 
+        <audio ref={audioRef} src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto" loop />
       </div>
 
       {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
