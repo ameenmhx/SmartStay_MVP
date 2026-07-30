@@ -81,6 +81,12 @@ class GalleryItem(BaseModel):
     image_url: str
 
 
+class GalleryItemUpdate(BaseModel):
+    title: str
+    description: str
+
+
+
 # Root Health Check Endpoint
 @app.get("/")
 def read_root():
@@ -336,6 +342,73 @@ async def create_gallery_item(item_data: GalleryItem):
     return {
         "message": "Gallery item added successfully",
         "data": inserted_record
+    }
+
+
+# PUT /gallery/{item_id} - Update a specific gallery item's title and description
+@app.put("/gallery/{item_id}")
+async def update_gallery_item(item_id: str, item_data: GalleryItemUpdate):
+    formatted_id = int(item_id) if item_id.isdigit() else item_id
+    payload = {
+        "title": item_data.title,
+        "description": item_data.description
+    }
+
+    try:
+        response = (
+            supabase.table("resort_gallery")
+            .update(payload)
+            .eq("id", formatted_id)
+            .execute()
+        )
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Gallery item with id {item_id} not found."
+            )
+        updated_record = response.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update gallery item {item_id}: {str(e)}"
+        )
+
+    return {
+        "message": "Gallery item updated successfully",
+        "data": updated_record
+    }
+
+
+# DELETE /gallery/{item_id} - Delete a specific gallery item
+@app.delete("/gallery/{item_id}")
+async def delete_gallery_item(item_id: str):
+    formatted_id = int(item_id) if item_id.isdigit() else item_id
+    try:
+        response = (
+            supabase.table("resort_gallery")
+            .delete()
+            .eq("id", formatted_id)
+            .execute()
+        )
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Gallery item with id {item_id} not found."
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete gallery item {item_id}: {str(e)}"
+        )
+
+    return {
+        "message": f"Successfully deleted gallery item {item_id}",
+        "item_id": item_id,
+        "deleted_records": response.data or []
     }
 
 

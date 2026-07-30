@@ -239,6 +239,7 @@ function GuestView({ roomFromUrl }) {
   const [activeCategoryTab, setActiveCategoryTab] = useState('ALL');
   const [galleryItems, setGalleryItems] = useState([]);
   const [loadingGallery, setLoadingGallery] = useState(true);
+  const [selectedLightboxImage, setSelectedLightboxImage] = useState(null);
 
   // 5-Star Feedback State
   const [reviewRating, setReviewRating] = useState(5);
@@ -1318,7 +1319,11 @@ function GuestView({ roomFromUrl }) {
               url: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80"
             }
           ]).map((item, index) => (
-            <div key={item.id || index} className="group relative overflow-hidden rounded-2xl border border-slate-100/80 bg-slate-50 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <div 
+              key={item.id || index} 
+              onClick={() => setSelectedLightboxImage(item)}
+              className="group relative overflow-hidden rounded-2xl border border-slate-100/80 bg-slate-50 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 cursor-pointer"
+            >
               <div className="aspect-video w-full overflow-hidden">
                 <img 
                   src={item.image_url || item.url} 
@@ -1334,6 +1339,44 @@ function GuestView({ roomFromUrl }) {
           ))}
         </div>
       </div>
+
+      {/* Guest Full-Screen Lightbox Modal */}
+      {selectedLightboxImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+          onClick={() => setSelectedLightboxImage(null)}
+        >
+          {/* Prominent Close button in top-right */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedLightboxImage(null);
+            }}
+            className="absolute top-6 right-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all duration-200 cursor-pointer focus:outline-none z-10"
+            aria-label="Close lightbox"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Centered Image and Info */}
+          <div 
+            className="max-w-4xl max-h-[85vh] w-full flex flex-col items-center justify-center text-center space-y-4 px-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedLightboxImage.image_url || selectedLightboxImage.url}
+              alt={selectedLightboxImage.title}
+              className="max-w-full max-h-[65vh] object-contain rounded-lg shadow-2xl border border-white/10"
+            />
+            <div className="text-white space-y-2 max-w-2xl">
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight">{selectedLightboxImage.title}</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">{selectedLightboxImage.description}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ==========================================================================
          RATE YOUR STAY SECTION (5-Star Guest Feedback)
@@ -1982,6 +2025,14 @@ function ManagerView() {
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [galleryStatus, setGalleryStatus] = useState(null);
 
+  // Dynamic Gallery Items states for Manager Control
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loadingGallery, setLoadingGallery] = useState(true);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [updatingItem, setUpdatingItem] = useState(false);
+
   const scrollToSection = (sectionRef, tabName) => {
     setActiveNavTab(tabName);
     if (sectionRef && sectionRef.current) {
@@ -2021,6 +2072,76 @@ function ManagerView() {
   }, []);
 
   // Manage Gallery upload handlers
+  const fetchGallery = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/gallery`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result && result.data) {
+          setGalleryItems(result.data);
+        } else if (Array.isArray(result)) {
+          setGalleryItems(result);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching gallery items:', err);
+    } finally {
+      setLoadingGallery(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGallery();
+  }, [fetchGallery]);
+
+  const handleUpdateGalleryItem = async (e) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    setUpdatingItem(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/gallery/${editingItem.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          description: editDesc,
+        }),
+      });
+      if (response.ok) {
+        setGalleryItems(prev => prev.map(item => item.id === editingItem.id ? { ...item, title: editTitle, description: editDesc } : item));
+        setEditingItem(null);
+        setGalleryStatus({ type: 'success', text: 'Gallery item updated successfully!' });
+      } else {
+        setGalleryStatus({ type: 'error', text: 'Failed to update gallery item.' });
+      }
+    } catch (err) {
+      console.error('Error updating gallery item:', err);
+      setGalleryStatus({ type: 'error', text: 'An error occurred while updating the item.' });
+    } finally {
+      setUpdatingItem(false);
+    }
+  };
+
+  const handleDeleteGalleryItem = async (itemId) => {
+    if (!window.confirm("Are you sure you want to delete this gallery item?")) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/gallery/${itemId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        setGalleryItems(prev => prev.filter(item => item.id !== itemId));
+        setGalleryStatus({ type: 'success', text: 'Gallery item deleted successfully!' });
+      } else {
+        setGalleryStatus({ type: 'error', text: 'Failed to delete gallery item.' });
+      }
+    } catch (err) {
+      console.error('Error deleting gallery item:', err);
+      setGalleryStatus({ type: 'error', text: 'An error occurred while deleting the item.' });
+    }
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -2090,6 +2211,7 @@ function ManagerView() {
       if (fileInput) {
         fileInput.value = '';
       }
+      fetchGallery();
     } catch (err) {
       console.error('Upload process error:', err);
       setGalleryStatus({ type: 'error', text: err.message || 'An error occurred during upload.' });
@@ -3231,7 +3353,130 @@ function ManagerView() {
             <span>{uploadingGallery ? 'Uploading & Saving...' : 'Publish to Gallery'}</span>
           </button>
         </form>
+
+        {/* Uploaded Photos Grid */}
+        <div className="border-t border-brand-border pt-8 mt-8 space-y-5">
+          <div>
+            <h3 className="text-lg text-brand-heading font-semibold tracking-tight">Currently Uploaded Photos</h3>
+            <p className="text-xs text-brand-body mt-0.5">View, edit, or delete existing gallery images</p>
+          </div>
+
+          {loadingGallery ? (
+            <div className="text-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin text-brand-primary mx-auto animate-reverse" />
+              <p className="text-xs text-brand-body mt-2">Loading gallery items...</p>
+            </div>
+          ) : galleryItems.length === 0 ? (
+            <div className="text-center py-10 bg-brand-surface rounded-xl border border-brand-border border-dashed p-6">
+              <Image className="w-8 h-8 text-brand-body/60 mx-auto" />
+              <p className="text-xs font-semibold text-brand-heading mt-2">No photos in gallery yet</p>
+              <p className="text-[11px] text-brand-body mt-1">Upload a photo above to display it in the gallery.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+              {galleryItems.map((item, index) => (
+                <div key={item.id || index} className="group relative overflow-hidden rounded-2xl border border-brand-border bg-brand-surface shadow-stripe transition-all duration-300">
+                  <div className="aspect-video w-full overflow-hidden relative">
+                    <img 
+                      src={item.image_url} 
+                      alt={item.title} 
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="p-4 space-y-1 bg-white border-t border-brand-border">
+                    <h4 className="font-semibold text-slate-800 text-sm">{item.title}</h4>
+                    <p className="text-xs text-slate-505 text-slate-500 leading-relaxed line-clamp-2">{item.description}</p>
+                    
+                    {/* Action buttons */}
+                    <div className="flex gap-2.5 pt-3 border-t border-slate-105 border-slate-100 mt-3">
+                      <button
+                        onClick={() => {
+                          setEditingItem(item);
+                          setEditTitle(item.title);
+                          setEditDesc(item.description);
+                        }}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-205 border-slate-200 text-xs font-semibold transition-all cursor-pointer text-center"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteGalleryItem(item.id)}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-red-50 hover:bg-red-105 hover:bg-red-100 text-red-655 text-red-600 border border-red-205 border-red-200 text-xs font-semibold transition-all cursor-pointer text-center"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Edit Gallery Item Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-all duration-300">
+          <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 transform scale-100 transition-all duration-200">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-lg font-bold text-slate-800 tracking-tight">Edit Gallery Photo</h3>
+              <button
+                onClick={() => setEditingItem(null)}
+                className="text-slate-400 hover:text-slate-655 hover:text-slate-600 text-sm font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateGalleryItem} className="space-y-4">
+              <div className="space-y-1">
+                <label htmlFor="edit-title-input" className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                  Image Title
+                </label>
+                <input
+                  id="edit-title-input"
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-slate-800 focus:bg-white transition-all font-semibold"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="edit-desc-input" className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                  Description
+                </label>
+                <textarea
+                  id="edit-desc-input"
+                  rows={3}
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-slate-800 focus:bg-white transition-all resize-none"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="flex-1 px-5 py-3 rounded-xl border border-slate-200 text-slate-755 text-slate-700 bg-white hover:bg-slate-50 text-xs font-bold transition-all duration-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingItem}
+                  className="flex-1 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-xs font-bold transition-all duration-200 shadow-stripe cursor-pointer"
+                >
+                  {updatingItem ? 'Saving Changes...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       </div>
 
