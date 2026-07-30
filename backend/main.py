@@ -235,6 +235,34 @@ async def delete_service_request(request_id: str):
     }
 
 
+# DELETE /requests/completed - Delete all completed (Delivered/Fulfilled) service requests and broadcast clear event
+@app.delete("/requests/completed")
+async def delete_completed_requests():
+    try:
+        response = (
+            supabase.table("service_requests")
+            .delete()
+            .in_("status", ["Delivered", "Fulfilled"])
+            .execute()
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete completed service requests: {str(e)}"
+        )
+
+    # Broadcast clear completed event to all connected WebSockets
+    broadcast_message = {
+        "type": "clear_completed"
+    }
+    await manager.broadcast(broadcast_message)
+
+    return {
+        "message": "Successfully cleared all completed/delivered service requests",
+        "deleted_records": response.data or []
+    }
+
+
 # GET /requests - Fetch all active requests from Supabase
 @app.get("/requests")
 async def get_service_requests():
@@ -297,6 +325,30 @@ async def get_guest_reviews():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch reviews from Supabase: {str(e)}"
         )
+
+
+# DELETE /feedback/{feedback_id} - Delete specific feedback record
+@app.delete("/feedback/{feedback_id}")
+async def delete_feedback(feedback_id: str):
+    formatted_id = int(feedback_id) if feedback_id.isdigit() else feedback_id
+    try:
+        response = (
+            supabase.table("feedback")
+            .delete()
+            .eq("id", formatted_id)
+            .execute()
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete feedback record {feedback_id}: {str(e)}"
+        )
+
+    return {
+        "message": f"Successfully deleted feedback record {feedback_id}",
+        "feedback_id": feedback_id,
+        "deleted_records": response.data or []
+    }
 
 
 # GET /gallery - Fetch all gallery items from "resort_gallery" Supabase table, ordered by created_at descending

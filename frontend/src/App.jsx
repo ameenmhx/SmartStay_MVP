@@ -54,6 +54,7 @@ import {
   Asterisk,
   Image,
   UploadCloud,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
@@ -558,6 +559,16 @@ function GuestView({ roomFromUrl }) {
         } else if (payload.type === 'checkout' || payload.event === 'checkout') {
           const checkedOutRoom = payload.room || payload.room_number || payload.data?.room;
           setMyRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
+        } else if (payload.type === 'clear_completed') {
+          setMyRequests((prev) =>
+            prev.filter(
+              (r) =>
+                r.status !== 'Delivered' &&
+                r.status !== 'Fulfilled' &&
+                r.status !== 'Completed' &&
+                normalizeStatus(r.status) !== 'Delivered'
+            )
+          );
         }
       } catch (err) {
         console.error('Error parsing Guest WS event:', err);
@@ -1654,6 +1665,16 @@ function WaiterView() {
         } else if (parsed.type === 'checkout' || parsed.event === 'checkout') {
           const checkedOutRoom = parsed.room || parsed.room_number || parsed.data?.room;
           setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
+        } else if (parsed.type === 'clear_completed') {
+          setRequests((prev) =>
+            prev.filter(
+              (r) =>
+                r.status !== 'Delivered' &&
+                r.status !== 'Fulfilled' &&
+                r.status !== 'Completed' &&
+                normalizeStatus(r.status) !== 'Delivered'
+            )
+          );
         }
       } catch (e) {
         console.error('Error parsing WS message:', e);
@@ -1832,9 +1853,19 @@ function WaiterView() {
             </button>
           ))}
         </div>
-        <span className="text-xs text-brand-body font-mono hidden sm:inline">
-          Showing {filteredRequests.length} of {requests.length} active records
-        </span>
+        <div className="flex items-center space-x-4">
+          <span className="text-xs text-brand-body font-mono hidden md:inline">
+            Showing {filteredRequests.length} of {requests.length} active records
+          </span>
+          <button
+            id="waiter-clear-completed-btn"
+            onClick={handleClearCompleted}
+            className="p-2 px-4 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 rounded-lg text-rose-700 transition-all text-xs font-semibold flex items-center space-x-2 shadow-sm cursor-pointer animate-fade-in"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+            <span>Clear Completed</span>
+          </button>
+        </div>
       </div>
 
       {/* Incoming Requests Feed List */}
@@ -1989,7 +2020,7 @@ function WaiterView() {
    ========================================================================== */
 function ManagerView() {
   const [requests, setRequests] = useState([]);
-  const [managerFilter, setManagerFilter] = useState('ALL'); // 'ALL' | 'Pending' | 'On the Way' | 'Delivered'
+  const [managerFilter, setManagerFilter] = useState('Pending'); // 'Pending' | 'On the Way' | 'Delivered' | 'All'
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [activityLogs, setActivityLogs] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -2528,6 +2559,47 @@ function ManagerView() {
     }
   };
 
+  // Clear Completed Requests API call
+  const handleClearCompleted = async () => {
+    if (!window.confirm("Are you sure you want to clear all completed and delivered requests?")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/requests/completed`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        triggerToast('Completed requests cleared successfully.', 'success');
+      } else {
+        console.error(`Clear completed API failed with status ${res.status}`);
+        triggerToast('Failed to clear completed requests.', 'error');
+      }
+    } catch (err) {
+      console.error('Clear completed error:', err);
+      triggerToast(`Error clearing completed requests: ${err.message}`, 'error');
+    }
+  };
+
+  // Delete Guest Feedback / Review API call
+  const handleDeleteFeedback = async (feedbackId, index) => {
+    if (!window.confirm("Are you sure you want to delete this feedback record?")) return;
+    
+    // Instantly remove from UI for immediate feedback
+    setReviews((prev) => prev.filter((r, idx) => (feedbackId ? r.id !== feedbackId : idx !== index)));
+    triggerToast('Feedback deleted successfully.', 'success');
+
+    if (!feedbackId) return; // If there's no actual ID, we just remove it from UI
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/feedback/${feedbackId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        console.error(`Delete feedback API failed with status ${res.status}`);
+      }
+    } catch (err) {
+      console.error('Delete feedback error:', err);
+    }
+  };
+
   // Fetch all requests from backend API GET /requests
   const fetchRequests = useCallback(async () => {
     try {
@@ -2649,6 +2721,26 @@ function ManagerView() {
             },
             ...prev.slice(0, 49),
           ]);
+        } else if (parsed.type === 'clear_completed') {
+          setRequests((prev) =>
+            prev.filter(
+              (r) =>
+                r.status !== 'Delivered' &&
+                r.status !== 'Fulfilled' &&
+                r.status !== 'Completed' &&
+                normalizeStatus(r.status) !== 'Delivered'
+            )
+          );
+          setActivityLogs((prev) => [
+            {
+              id: Date.now() + Math.random(),
+              type: 'CLEAR_COMPLETED',
+              timestamp: new Date().toLocaleTimeString(),
+              message: `Completed/delivered requests cleared from dashboard`,
+              status: 'Cleared',
+            },
+            ...prev.slice(0, 49),
+          ]);
         }
       } catch (err) {
         console.error('Error parsing Manager WS event:', err);
@@ -2671,7 +2763,7 @@ function ManagerView() {
 
   // Analytics Metrics calculations
   const filteredRequests = requests.filter((req) => {
-    if (managerFilter === 'ALL') return true;
+    if (managerFilter === 'All' || managerFilter === 'ALL') return true;
     return normalizeStatus(req.status).toLowerCase() === managerFilter.toLowerCase();
   });
 
@@ -2720,18 +2812,29 @@ function ManagerView() {
           </p>
         </div>
 
-        <button
-          id="manager-refresh-btn"
-          onClick={() => {
-            fetchRequests();
-            fetchReviews();
-            connectWebSocket();
-          }}
-          className="p-2 px-5 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-semibold flex items-center space-x-2 self-start md:self-center shadow-stripe cursor-pointer"
-        >
-          <RefreshCw className="w-4 h-4 text-brand-primary" />
-          <span>Refresh Analytics</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
+          <button
+            id="manager-clear-completed-btn"
+            onClick={handleClearCompleted}
+            className="p-2 px-5 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 rounded-lg text-rose-700 transition-all text-xs font-semibold flex items-center space-x-2 shadow-stripe cursor-pointer animate-fade-in"
+          >
+            <Trash2 className="w-4 h-4 text-rose-500" />
+            <span>Clear Completed</span>
+          </button>
+          
+          <button
+            id="manager-refresh-btn"
+            onClick={() => {
+              fetchRequests();
+              fetchReviews();
+              connectWebSocket();
+            }}
+            className="p-2 px-5 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-semibold flex items-center space-x-2 shadow-stripe cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4 text-brand-primary" />
+            <span>Refresh Analytics</span>
+          </button>
+        </div>
       </div>
 
       {/* Top-Level Analytics Metrics Row */}
@@ -3040,15 +3143,26 @@ function ManagerView() {
             </div>
           </div>
 
-          <span className="text-xs text-brand-body font-mono">
-            {requests.length} active database records
-          </span>
+          <div className="flex items-center space-x-4">
+            <span className="text-xs text-brand-body font-mono hidden md:inline">
+              {requests.length} active database records
+            </span>
+            <button
+              id="live-feed-clear-completed-btn"
+              onClick={handleClearCompleted}
+              className="p-1.5 px-3 border border-rose-200 hover:border-rose-300 bg-transparent hover:bg-rose-50 rounded-lg text-rose-600 transition-all text-xs font-semibold flex items-center space-x-1.5 cursor-pointer shadow-sm animate-fade-in"
+              title="Clear all completed/delivered requests"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+              <span>Clear Completed Orders</span>
+            </button>
+          </div>
         </div>
 
         {/* Filter Pills */}
         <div className="flex items-center justify-between border-b border-brand-border pb-4">
           <div className="flex space-x-3">
-            {['ALL', 'Pending', 'On the Way', 'Delivered'].map((tab) => (
+            {['Pending', 'On the Way', 'Delivered', 'All'].map((tab) => (
               <button
                 key={tab}
                 id={`manager-filter-tab-${tab.toLowerCase().replace(/\s+/g, '-')}`}
@@ -3075,18 +3189,18 @@ function ManagerView() {
               <Layers3 className="w-6 h-6 text-brand-body" />
             </div>
             <p className="text-sm font-semibold text-brand-heading">
-              {managerFilter === 'ALL'
+              {managerFilter === 'All' || managerFilter === 'ALL'
                 ? 'No resort activity recorded yet'
                 : `No requests with status "${managerFilter}"`}
             </p>
             <p className="text-xs text-brand-body max-w-sm mx-auto">
-              {managerFilter === 'ALL'
+              {managerFilter === 'All' || managerFilter === 'ALL'
                 ? 'Any order placed by guests or updated by waiters will instantly show up in this live feed.'
                 : `There are currently no requests in the live feed matching "${managerFilter}".`}
             </p>
-            {managerFilter !== 'ALL' && (
+            {managerFilter !== 'All' && managerFilter !== 'ALL' && (
               <button
-                onClick={() => setManagerFilter('ALL')}
+                onClick={() => setManagerFilter('All')}
                 className="mt-2 px-4 py-2 bg-brand-card border border-brand-border text-brand-primary rounded-lg text-xs font-bold transition-all hover:bg-brand-surface shadow-sm cursor-pointer"
               >
                 Clear Filter
@@ -3250,7 +3364,17 @@ function ManagerView() {
 
                   <div className="flex items-center justify-between text-[10px] text-brand-body pt-1 border-t border-brand-border font-mono">
                     <span>Feedback Record #{rev.id || idx + 1}</span>
-                    <span>Verified Guest Stay</span>
+                    <div className="flex items-center space-x-2.5">
+                      <button
+                        onClick={() => handleDeleteFeedback(rev.id, idx)}
+                        className="flex items-center space-x-1 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100/80 px-2 py-0.5 rounded transition-all cursor-pointer font-semibold"
+                        title="Delete Feedback"
+                      >
+                        <Trash2 className="w-3 h-3 text-red-500" />
+                        <span>Delete</span>
+                      </button>
+                      <span className="hidden sm:inline">Verified Guest Stay</span>
+                    </div>
                   </div>
                 </div>
               );
@@ -3271,7 +3395,7 @@ function ManagerView() {
           </div>
         </div>
 
-        <form onSubmit={handleUploadGalleryItem} className="space-y-6 max-w-2xl">
+        <form onSubmit={handleUploadGalleryItem} className="space-y-6">
           {galleryStatus && (
             <div className={`p-4 rounded-xl border text-sm font-semibold flex items-center space-x-3 ${
               galleryStatus.type === 'success' 
@@ -3282,76 +3406,102 @@ function ManagerView() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <label htmlFor="gallery-title-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
-              Image Title
-            </label>
-            <input
-              id="gallery-title-input"
-              type="text"
-              value={galleryTitle}
-              onChange={(e) => setGalleryTitle(e.target.value)}
-              placeholder="e.g. Presidential Poolside Lounge"
-              className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
-              required
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Left Column: Title and Description */}
+            <div className="space-y-6 flex flex-col justify-between">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label htmlFor="gallery-title-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+                    Image Title
+                  </label>
+                  <input
+                    id="gallery-title-input"
+                    type="text"
+                    value={galleryTitle}
+                    onChange={(e) => setGalleryTitle(e.target.value)}
+                    placeholder="e.g. Presidential Poolside Lounge"
+                    className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
+                    required
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <label htmlFor="gallery-desc-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
-              Description
-            </label>
-            <textarea
-              id="gallery-desc-input"
-              rows={3}
-              value={galleryDesc}
-              onChange={(e) => setGalleryDesc(e.target.value)}
-              placeholder="Provide a premium description of this facility or experience"
-              className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all resize-none"
-              required
-            />
-          </div>
+                <div className="space-y-2">
+                  <label htmlFor="gallery-desc-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+                    Description
+                  </label>
+                  <textarea
+                    id="gallery-desc-input"
+                    rows={6}
+                    value={galleryDesc}
+                    onChange={(e) => setGalleryDesc(e.target.value)}
+                    placeholder="Provide a premium description of this facility or experience"
+                    className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all resize-none"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <label className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
-              Gallery Image File
-            </label>
-            <div className="relative border-2 border-dashed border-brand-border hover:border-brand-primary/40 rounded-xl p-6 transition-all bg-brand-surface flex flex-col items-center justify-center cursor-pointer text-center">
-              <input
-                id="gallery-file-input"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                required
-              />
-              <div className="space-y-2 flex flex-col items-center">
-                <UploadCloud className="w-10 h-10 text-brand-primary/60" />
-                <span className="text-xs text-brand-heading font-semibold">
-                  {galleryFile ? galleryFile.name : 'Click to select or drag & drop an image'}
-                </span>
-                <span className="text-[10px] text-brand-body block">Supports PNG, JPG, JPEG or WEBP (Max 5MB)</span>
+              <div>
+                <button
+                  type="submit"
+                  disabled={uploadingGallery}
+                  className="px-7 py-3 bg-brand-primary hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-all shadow-stripe hover:shadow-stripe-hover flex items-center space-x-2 border border-brand-border cursor-pointer active:scale-[0.98] w-full md:w-auto justify-center"
+                >
+                  <span>{uploadingGallery ? 'Uploading & Saving...' : 'Publish to Gallery'}</span>
+                </button>
               </div>
             </div>
 
-            {galleryFilePreview && (
-              <div className="mt-4 p-4 bg-white rounded-xl border border-brand-border flex items-center justify-center">
-                <img
-                  src={galleryFilePreview}
-                  alt="Preview"
-                  className="max-h-48 rounded-lg object-contain border border-brand-border shadow-sm"
+            {/* Right Column: File dropzone with thumbnail preview */}
+            <div className="space-y-2 flex flex-col">
+              <label className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+                Gallery Image File
+              </label>
+              <div className="relative border-2 border-dashed border-brand-primary/60 hover:border-brand-primary/80 rounded-xl p-8 transition-all bg-brand-surface flex flex-col items-center justify-center cursor-pointer text-center flex-grow min-h-[250px] md:min-h-[300px] h-full group">
+                <input
+                  id="gallery-file-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                  required={!galleryFile}
                 />
+                {galleryFilePreview ? (
+                  <div className="relative z-10 flex flex-col items-center justify-center space-y-4 w-full h-full">
+                    <div className="relative w-full max-h-56 overflow-hidden rounded-lg border border-brand-border flex items-center justify-center bg-white shadow-inner p-2">
+                      <img
+                        src={galleryFilePreview}
+                        alt="Preview"
+                        className="max-h-40 object-contain rounded-md border border-brand-border shadow-sm transition-transform group-hover:scale-[1.02] duration-300"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-brand-heading font-semibold max-w-[280px] truncate block">
+                        {galleryFile ? galleryFile.name : 'Image Selected'}
+                      </span>
+                      <span className="text-[10px] text-brand-primary font-medium hover:underline block">
+                        Click or drag to change image
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 flex flex-col items-center relative z-10">
+                    <div className="p-4 bg-brand-primary/5 rounded-full text-brand-primary group-hover:scale-110 transition-transform duration-300">
+                      <UploadCloud className="w-12 h-12" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-brand-heading font-bold block">
+                        Click to select or drag & drop an image
+                      </span>
+                      <span className="text-[10px] text-brand-body block">
+                        Supports PNG, JPG, JPEG or WEBP (Max 5MB)
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-
-          <button
-            type="submit"
-            disabled={uploadingGallery}
-            className="px-7 py-3 bg-brand-primary hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-all shadow-stripe hover:shadow-stripe-hover flex items-center space-x-2 border border-brand-border cursor-pointer active:scale-[0.98]"
-          >
-            <span>{uploadingGallery ? 'Uploading & Saving...' : 'Publish to Gallery'}</span>
-          </button>
         </form>
 
         {/* Uploaded Photos Grid */}
