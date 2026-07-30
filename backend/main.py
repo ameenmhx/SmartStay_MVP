@@ -330,12 +330,11 @@ async def get_guest_reviews():
 # DELETE /feedback/{feedback_id} - Delete specific feedback record
 @app.delete("/feedback/{feedback_id}")
 async def delete_feedback(feedback_id: str):
-    formatted_id = int(feedback_id) if feedback_id.isdigit() else feedback_id
     try:
         response = (
-            supabase.table("feedback")
+            supabase.table("guest_reviews")
             .delete()
-            .eq("id", formatted_id)
+            .eq("room_number", feedback_id)
             .execute()
         )
     except Exception as e:

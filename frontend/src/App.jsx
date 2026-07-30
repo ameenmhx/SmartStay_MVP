@@ -2640,21 +2640,26 @@ function ManagerView() {
   const handleDeleteFeedback = async (feedbackId, index) => {
     if (!window.confirm("Are you sure you want to delete this feedback record?")) return;
     
-    // Instantly remove from UI for immediate feedback
-    setReviews((prev) => prev.filter((r, idx) => (feedbackId ? r.id !== feedbackId : idx !== index)));
-    triggerToast('Feedback deleted successfully.', 'success');
-
-    if (!feedbackId) return; // If there's no actual ID, we just remove it from UI
+    if (!feedbackId) {
+      setReviews((prev) => prev.filter((r, idx) => idx !== index));
+      triggerToast('Feedback deleted successfully.', 'success');
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/feedback/${feedbackId}`, {
         method: 'DELETE',
       });
-      if (!res.ok) {
+      if (res.ok) {
+        setReviews((prev) => prev.filter((r) => r.id !== feedbackId));
+        triggerToast('Feedback deleted successfully.', 'success');
+      } else {
         console.error(`Delete feedback API failed with status ${res.status}`);
+        triggerToast('Failed to delete feedback.', 'error');
       }
     } catch (err) {
       console.error('Delete feedback error:', err);
+      triggerToast(`Error deleting feedback: ${err.message}`, 'error');
     }
   };
 
@@ -3407,7 +3412,7 @@ function ManagerView() {
               const ratingNum = Number(rev.rating) || 5;
               return (
                 <div
-                  key={rev.id || idx}
+                  key={rev.room_number || idx}
                   className="bg-brand-card border border-brand-border p-6 rounded-xl hover:border-brand-primary/20 transition-all space-y-4 shadow-stripe"
                 >
                   <div className="flex items-center justify-between">
@@ -3437,10 +3442,10 @@ function ManagerView() {
                   </p>
 
                   <div className="flex items-center justify-between text-[10px] text-brand-body pt-1 border-t border-brand-border font-mono">
-                    <span>Feedback Record #{rev.id || idx + 1}</span>
+                    <span>Feedback Record #{rev.room_number || idx + 1}</span>
                     <div className="flex items-center space-x-2.5">
                       <button
-                        onClick={() => handleDeleteFeedback(rev.id, idx)}
+                        onClick={() => handleDeleteFeedback(rev.room_number, idx)}
                         className="flex items-center space-x-1 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100/80 px-2 py-0.5 rounded transition-all cursor-pointer font-semibold"
                         title="Delete Feedback"
                       >
