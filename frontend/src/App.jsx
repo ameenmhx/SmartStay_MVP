@@ -19,13 +19,10 @@ import {
   RefreshCw,
   BellRing,
   Send,
-  Building2,
   Check,
   ChevronRight,
   ShieldCheck,
   Truck,
-  PhoneCall,
-  Flame,
   Layers,
   Mic,
   MicOff,
@@ -36,8 +33,6 @@ import {
   BarChart3,
   TrendingUp,
   Activity,
-  Users,
-  Shield,
   Layers3,
   QrCode,
   Printer,
@@ -47,7 +42,6 @@ import {
   Star,
   MessageSquare,
   Award,
-  ThumbsUp,
   Home,
   ClipboardList,
   Asterisk,
@@ -134,7 +128,7 @@ export default function App() {
     return params.get('room') || '';
   });
   const [session, setSession] = useState(null);
-  const [loadingAuth, setLoadingAuth] = useState(true);
+  const [_loadingAuth, setLoadingAuth] = useState(true);
 
   useEffect(() => {
     const handleUrlChange = () => {
@@ -294,7 +288,7 @@ function GuestView({ roomFromUrl }) {
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [activeCategoryTab, setActiveCategoryTab] = useState('ALL');
   const [galleryItems, setGalleryItems] = useState([]);
-  const [loadingGallery, setLoadingGallery] = useState(true);
+  const [_loadingGallery, setLoadingGallery] = useState(true);
   const [selectedLightboxImage, setSelectedLightboxImage] = useState(null);
 
   // 5-Star Feedback State
@@ -2087,7 +2081,6 @@ function ManagerView() {
 
   const [managerFilter, setManagerFilter] = useState('Pending'); // 'Pending' | 'On the Way' | 'Delivered' | 'All'
   const [wsStatus, setWsStatus] = useState('CONNECTING');
-  const [activityLogs, setActivityLogs] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   
@@ -2264,7 +2257,7 @@ function ManagerView() {
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('gallery')
         .upload(filePath, galleryFile, {
           cacheControl: '3600',

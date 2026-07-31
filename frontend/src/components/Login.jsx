@@ -7,7 +7,6 @@ import {
   ArrowRight,
   AlertCircle,
   RefreshCw,
-  Building2,
   Sparkles,
   CheckCircle2,
 } from 'lucide-react';
