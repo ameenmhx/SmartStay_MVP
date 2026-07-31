@@ -3,7 +3,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   ConciergeBell,
-  Bell,
   Droplets,
   Coffee,
   UtensilsCrossed,
@@ -22,7 +21,6 @@ import {
   Send,
   Building2,
   Check,
-  AlertCircle,
   ChevronRight,
   ShieldCheck,
   Truck,
@@ -56,7 +54,6 @@ import {
   Image,
   UploadCloud,
   Trash2,
-  Speaker,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
@@ -1633,14 +1630,9 @@ function GuestView({ roomFromUrl }) {
    ========================================================================== */
 function WaiterView() {
   const [requests, setRequests] = useState([]);
-  const [nudgedRequestIds, setNudgedRequestIds] = useState({});
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [filter, setFilter] = useState('Pending'); // 'ALL' | 'Pending' | 'On the Way' | 'Delivered'
   const [newIncomingCount, setNewIncomingCount] = useState(0);
-
-  // Audio Context and Unlock Button State/Refs
-  const [audioEnabled, setAudioEnabled] = useState(false);
-  const audioEnabledRef = useRef(false);
 
   const socketRef = useRef(null);
   const requestsStateRef = useRef([]);
@@ -1648,16 +1640,6 @@ function WaiterView() {
   useEffect(() => {
     requestsStateRef.current = requests;
   }, [requests]);
-
-  useEffect(() => {
-    audioEnabledRef.current = audioEnabled;
-  }, [audioEnabled]);
-
-  const enableAudio = () => {
-    const initVoice = new SpeechSynthesisUtterance('');
-    window.speechSynthesis.speak(initVoice);
-    setAudioEnabled(true);
-  };
 
   // Fetch all requests from backend API GET /requests
   const fetchRequests = useCallback(async () => {
@@ -1731,33 +1713,6 @@ function WaiterView() {
             )
           );
           triggerToast('Completed and delivered requests cleared.', 'info');
-        } else if (parsed.type === 'nudge' || parsed.event === 'nudge') {
-          const nudgedId = parsed.request_id || parsed.data?.request_id;
-          if (nudgedId) {
-            const nudgedIdStr = String(nudgedId);
-            setNudgedRequestIds((prev) => ({ ...prev, [nudgedIdStr]: true }));
-            setTimeout(() => {
-              setNudgedRequestIds((prev) => {
-                const copy = { ...prev };
-                delete copy[nudgedIdStr];
-                return copy;
-              });
-            }, 5000);
-          }
-          const targetReq = requestsStateRef.current.find((r) => String(r.id) === String(nudgedId));
-          const room = targetReq?.room_number;
-          const item = targetReq?.item_requested;
-          const msg = room && item ? `🔔 Suite ${room} is nudging for: "${item}"!` : `🔔 Guest is nudging for a pending request!`;
-          triggerToast(msg, 'warning');
-          if (audioEnabledRef.current) {
-            const alertVoice = new SpeechSynthesisUtterance('Attention! Staff pinged for pending order.');
-            alertVoice.rate = 1.0;
-            alertVoice.pitch = 1.2;
-            window.speechSynthesis.speak(alertVoice);
-            if (navigator.vibrate) {
-              navigator.vibrate([500, 500, 500, 500, 500]);
-            }
-          }
         }
       } catch (e) {
         console.error('Error parsing WS message:', e);
@@ -1850,27 +1805,6 @@ function WaiterView() {
 
         {/* Live WS Connection Status and Audio Badge */}
         <div className="flex flex-wrap items-center gap-3">
-          {audioEnabled ? (
-            <button
-              id="enable-audio-btn"
-              onClick={enableAudio}
-              className="p-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 rounded-lg transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-stripe cursor-pointer"
-              title="Audio Alerts Enabled"
-            >
-              <Speaker className="w-4 h-4" />
-              <span>Audio Alerts Enabled</span>
-            </button>
-          ) : (
-            <button
-              id="enable-audio-btn"
-              onClick={enableAudio}
-              className="p-2 px-4 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-stripe cursor-pointer"
-              title="Enable Audio Alerts"
-            >
-              <Speaker className="w-4 h-4 text-brand-primary animate-pulse" />
-              <span>Enable Audio Alerts</span>
-            </button>
-          )}
 
           <div
             className={`px-4 py-1.5 rounded-lg border text-xs font-semibold flex items-center space-x-2 ${
@@ -2018,10 +1952,6 @@ function WaiterView() {
               <div
                 key={req.id || idx}
                 className={`border rounded-xl p-6 flex flex-col justify-between space-y-5 shadow-stripe transition-all duration-300 relative overflow-hidden ${
-                  nudgedRequestIds[String(req.id)]
-                    ? 'ring-4 ring-red-500 border-red-500 scale-[1.03] animate-pulse'
-                    : ''
-                } ${
                   isEmergency
                     ? 'bg-brand-accent text-white border-brand-accent shadow-stripe scale-[1.02]'
                     : 'bg-brand-card border-brand-border text-brand-body hover:border-brand-primary/20'
@@ -2154,34 +2084,6 @@ function ManagerView() {
     requestsStateRef.current = requests;
   }, [requests]);
 
-  const handlePingStaff = async (requestId) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/request/${requestId}/nudge`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        if (typeof triggerToast !== 'undefined') {
-          triggerToast('Staff pinged successfully!', 'success');
-        } else {
-          alert('Staff pinged successfully!');
-        }
-      } else {
-        console.error(`Ping staff API failed with status ${res.status}`);
-        if (typeof triggerToast !== 'undefined') {
-          triggerToast('Failed to ping staff.', 'error');
-        } else {
-          alert('Failed to ping staff.');
-        }
-      }
-    } catch (err) {
-      console.error('Ping staff error:', err);
-      if (typeof triggerToast !== 'undefined') {
-        triggerToast(`Error pinging staff: ${err.message}`, 'error');
-      } else {
-        alert(`Error pinging staff: ${err.message}`);
-      }
-    }
-  };
 
   const [managerFilter, setManagerFilter] = useState('Pending'); // 'Pending' | 'On the Way' | 'Delivered' | 'All'
   const [wsStatus, setWsStatus] = useState('CONNECTING');
@@ -2910,23 +2812,6 @@ function ManagerView() {
             },
             ...prev.slice(0, 49),
           ]);
-        } else if (parsed.type === 'nudge' || parsed.event === 'nudge') {
-          const nudgedId = parsed.request_id || parsed.data?.request_id;
-          const targetReq = requestsStateRef.current.find((r) => String(r.id) === String(nudgedId));
-          const room = targetReq?.room_number || parsed.room || parsed.room_number || parsed.data?.room_number || parsed.data?.room;
-          const item = targetReq?.item_requested || parsed.item || parsed.item_requested || parsed.data?.item_requested || parsed.data?.item;
-          const msg = room && item ? `🔔 Room ${room} is nudging for: "${item}"!` : `🔔 Guest is nudging for a pending request!`;
-          triggerToast(msg, 'warning');
-          setActivityLogs((prev) => [
-            {
-              id: Date.now() + Math.random(),
-              type: 'NUDGE',
-              timestamp: new Date().toLocaleTimeString(),
-              message: `Guest in Room ${room || 'unknown'} nudged for "${item || 'requested item'}"`,
-              status: 'Nudged',
-            },
-            ...prev.slice(0, 49),
-          ]);
         }
       } catch (err) {
         console.error('Error parsing Manager WS event:', err);
@@ -3451,16 +3336,6 @@ function ManagerView() {
 
                   {/* Right side: Status Badge */}
                   <div className="flex items-center space-x-3 self-end sm:self-center relative z-10">
-                    {isPending && (
-                      <button
-                        onClick={() => handlePingStaff(req.id)}
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm border bg-amber-50 hover:bg-amber-100 text-amber-700 hover:text-amber-800 border-amber-200 hover:border-amber-300 cursor-pointer active:scale-[0.98]"
-                        title="Ping staff about this pending request"
-                      >
-                        <Bell className="w-3.5 h-3.5 text-amber-500 animate-bounce" />
-                        <span>Ping Staff</span>
-                      </button>
-                    )}
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center space-x-1.5 ${
                         isEmergency

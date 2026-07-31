@@ -234,24 +234,6 @@ async def delete_service_request(request_id: str):
         "deleted_records": response.data or []
     }
 
-
-# POST /request/{request_id}/nudge - Broadcast nudge event to all connected WebSockets
-@app.post("/request/{request_id}/nudge")
-async def nudge_service_request(request_id: str):
-    # Broadcast exact JSON payload to all connected clients: {"type": "nudge", "request_id": request_id}
-    broadcast_message = {
-        "type": "nudge",
-        "request_id": request_id
-    }
-    await manager.broadcast(broadcast_message)
-    return {
-        "status": "success",
-        "message": f"Nudge broadcasted for request {request_id}",
-        "request_id": request_id
-    }
-
-
-
 # DELETE /requests/completed - Delete all completed (Delivered/Fulfilled) service requests and broadcast clear event
 @app.delete("/requests/completed")
 async def delete_completed_requests():
