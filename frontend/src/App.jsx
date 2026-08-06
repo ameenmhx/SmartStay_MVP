@@ -586,7 +586,7 @@ function GuestView({ roomFromUrl }) {
       }
 
       targetCat.items.push({
-        id: serv.title || serv.id,
+        id: serv.id,
         title: serv.title,
         desc: serv.description || serv.desc || '',
         badge: serv.badge || serv.tag || 'SERVICE',
@@ -2266,7 +2266,7 @@ function ManagerView() {
       });
       if (res.ok) {
         triggerToast(`Deleted "${serviceTitle}" successfully`, 'success');
-        setManagerServices((prev) => prev.filter((s) => String(s.id || s.title) !== String(serviceId)));
+        setManagerServices((prev) => prev.filter((s) => String(s.id) !== String(serviceId)));
       } else {
         triggerToast('Failed to delete service', 'error');
       }
@@ -3760,9 +3760,9 @@ function ManagerView() {
                     <p className="text-xs text-slate-400 italic pl-4">No active services in this category.</p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {categoryItems.map((service, idx) => (
+                      {categoryItems.map((service) => (
                         <div
-                          key={service.id || service.title || idx}
+                          key={service.id}
                           className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-4 hover:border-slate-200 transition-all"
                         >
                           <div className="flex items-start justify-between">
@@ -3780,8 +3780,8 @@ function ManagerView() {
 
                           <div className="pt-2 border-t border-slate-100 flex justify-end">
                             <button
-                              id={`delete-service-btn-${(service.id || service.title).toString().toLowerCase().replace(/\s+/g, '-')}`}
-                              onClick={() => handleDeleteService(service.id || service.title, service.title)}
+                              id={`delete-service-btn-${String(service.id)}`}
+                              onClick={() => handleDeleteService(service.id, service.title)}
                               className="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-red-500" />
