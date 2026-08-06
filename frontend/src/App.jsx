@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
@@ -506,43 +506,114 @@ function GuestView({ roomFromUrl }) {
     }
   };
 
-  // Request Categories Scope
-  const serviceCategories = [
-    {
-      id: 'room_service',
-      title: 'In-Suite Dining & Bar',
-      description: 'Gourmet dining, refreshments & beverages delivered to your room',
-      icon: UtensilsCrossed,
-      items: [
-        { id: 'Water', title: 'Bottled Mineral Water', desc: 'Ice-cold premium mineral water', icon: Droplets, badge: 'Hydration' },
-        { id: 'Tea', title: 'Artisan Hot Tea', desc: 'Selection of organic teas', icon: Coffee, badge: 'Beverage' },
-        { id: 'Coffee', title: 'Fresh Espresso', desc: 'Double espresso or Americano', icon: Coffee, badge: 'Beverage' },
-        { id: 'Food', title: 'Gourmet In-Room Meal', desc: 'Chef-crafted warm culinary dishes', icon: UtensilsCrossed, badge: 'Fine Dining' },
-      ],
-    },
-    {
-      id: 'housekeeping',
-      title: 'Housekeeping & Comfort',
-      description: 'Linen refresh, turndown service & luxury amenities',
-      icon: Sparkles,
-      items: [
-        { id: 'Room Cleaning', title: 'Full Suite Refresh', desc: 'Thorough room cleaning & refresh', icon: Sparkles, badge: 'Service' },
-        { id: 'Towels', title: 'Fresh Plush Towels', desc: 'Set of Egyptian cotton bath towels', icon: Bath, badge: 'Amenities' },
-        { id: 'Laundry', title: 'Express Laundry', desc: 'Wash, press & garment care', icon: Shirt, badge: 'Garment Care' },
-      ],
-    },
-    {
-      id: 'reception',
-      title: 'Concierge & Transport',
-      description: 'Front desk, transport booking & express bill settlement',
-      icon: ConciergeBell,
-      items: [
-        { id: 'Taxi', title: 'Private Chauffeur', desc: 'Airport or city shuttle booking', icon: Car, badge: 'Transport' },
-        { id: 'Wake-up Call', title: 'Personalized Alarm Call', desc: 'Scheduled morning concierge call', icon: Clock, badge: 'Front Desk' },
-        { id: 'Checkout', title: 'Express Suite Checkout', desc: 'Luggage assistance & billing', icon: LogOut, badge: 'Checkout' },
-      ],
-    },
-  ];
+  const [dynamicServices, setDynamicServices] = useState([]);
+  const [_loadingServices, setLoadingServices] = useState(true);
+
+  const fetchGuestServices = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/services`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result && Array.isArray(result.data)) {
+          setDynamicServices(result.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching guest services:', err);
+    } finally {
+      setLoadingServices(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGuestServices();
+  }, [fetchGuestServices]);
+
+  // Dynamic Request Categories Scope
+  const serviceCategories = useMemo(() => {
+    const getItemIcon = (title, badge, category) => {
+      const text = (title + ' ' + (badge || '') + ' ' + (category || '')).toLowerCase();
+      if (text.includes('water') || text.includes('hydration') || text.includes('drop')) return Droplets;
+      if (text.includes('tea') || text.includes('coffee') || text.includes('beverage')) return Coffee;
+      if (text.includes('meal') || text.includes('dining') || text.includes('food') || text.includes('bar')) return UtensilsCrossed;
+      if (text.includes('towel') || text.includes('bath') || text.includes('toiletri')) return Bath;
+      if (text.includes('cleaning') || text.includes('turndown') || text.includes('refresh') || text.includes('housekeeping')) return Sparkles;
+      if (text.includes('laundry') || text.includes('press') || text.includes('garment')) return Shirt;
+      if (text.includes('taxi') || text.includes('chauffeur') || text.includes('transport') || text.includes('car')) return Car;
+      if (text.includes('call') || text.includes('clock') || text.includes('alarm')) return Clock;
+      if (text.includes('checkout') || text.includes('luggage') || text.includes('concierge')) return LogOut;
+      return Sparkles;
+    };
+
+    const categories = [
+      {
+        id: 'room_service',
+        title: 'In-Suite Dining & Bar',
+        description: 'Gourmet dining, refreshments & beverages delivered to your room',
+        icon: UtensilsCrossed,
+        items: [],
+      },
+      {
+        id: 'housekeeping',
+        title: 'Housekeeping & Comfort',
+        description: 'Linen refresh, turndown service & luxury amenities',
+        icon: Sparkles,
+        items: [],
+      },
+      {
+        id: 'reception',
+        title: 'Concierge & Transport',
+        description: 'Front desk, transport booking & express bill settlement',
+        icon: ConciergeBell,
+        items: [],
+      },
+    ];
+
+    if (!dynamicServices || dynamicServices.length === 0) {
+      // Standard Fallback Items if dynamic fetch is loading or empty
+      categories[0].items = [
+        { id: 'Water', title: 'Bottled Mineral Water', desc: 'Ice-cold premium mineral water', icon: Droplets, badge: 'HYDRATION' },
+        { id: 'Tea', title: 'Artisan Hot Tea', desc: 'Selection of organic teas', icon: Coffee, badge: 'BEVERAGE' },
+        { id: 'Coffee', title: 'Fresh Espresso', desc: 'Double espresso or Americano', icon: Coffee, badge: 'BEVERAGE' },
+        { id: 'Food', title: 'Gourmet In-Room Meal', desc: 'Chef-crafted warm culinary dishes', icon: UtensilsCrossed, badge: 'FINE DINING' },
+      ];
+      categories[1].items = [
+        { id: 'Towels', title: 'Extra Plush Towels', desc: 'Set of Egyptian cotton bath towels', icon: Bath, badge: 'AMENITIES' },
+        { id: 'Turndown', title: 'Bed Turndown Service', desc: 'Evening turndown & luxury linen preparation', icon: Sparkles, badge: 'SERVICE' },
+        { id: 'Toiletries', title: 'Luxury Toiletries Set', desc: 'Premium bath products & essential toiletries', icon: Bath, badge: 'LUXURY' },
+      ];
+      categories[2].items = [
+        { id: 'Checkout', title: 'Late Checkout Request', desc: 'Extended suite departure request', icon: LogOut, badge: 'FRONT DESK' },
+        { id: 'Luggage', title: 'Luggage Assistance', desc: 'Porters for suite luggage transfer', icon: LogOut, badge: 'CONCIERGE' },
+        { id: 'Taxi', title: 'Taxi Booking', desc: 'Private chauffeur or airport taxi arrangement', icon: Car, badge: 'TRANSPORT' },
+      ];
+      return categories;
+    }
+
+    dynamicServices.forEach((serv) => {
+      const catStr = (serv.category || '').toLowerCase();
+      let targetCat = categories.find((c) => c.title.toLowerCase() === catStr || c.id === catStr);
+      if (!targetCat) {
+        if (catStr.includes('dining') || catStr.includes('food') || catStr.includes('bar') || catStr.includes('room_service')) {
+          targetCat = categories[0];
+        } else if (catStr.includes('housekeeping') || catStr.includes('comfort') || catStr.includes('clean')) {
+          targetCat = categories[1];
+        } else {
+          targetCat = categories[2];
+        }
+      }
+
+      targetCat.items.push({
+        id: serv.title || serv.id,
+        title: serv.title,
+        desc: serv.description || serv.desc || '',
+        badge: serv.badge || serv.tag || 'SERVICE',
+        icon: getItemIcon(serv.title, serv.badge || serv.tag, serv.category),
+      });
+    });
+
+    return categories;
+  }, [dynamicServices]);
 
   // Fetch all requests for the currently selected room
   const fetchMyRequests = useCallback(async () => {
@@ -2104,6 +2175,7 @@ function ManagerView() {
   const liveFeedRef = useRef(null);
   const reviewsRef = useRef(null);
   const galleryManageRef = useRef(null);
+  const servicesManageRef = useRef(null);
   const [activeNavTab, setActiveNavTab] = useState('analytics');
 
   // Manage Gallery Form States
@@ -2121,6 +2193,116 @@ function ManagerView() {
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [updatingItem, setUpdatingItem] = useState(false);
+
+  // Dynamic Services States for Manager Control
+  const [managerServices, setManagerServices] = useState([]);
+  const [loadingManagerServices, setLoadingManagerServices] = useState(true);
+  const [newServiceTitle, setNewServiceTitle] = useState('');
+  const [newServiceCategory, setNewServiceCategory] = useState('In-Suite Dining & Bar');
+  const [newServiceBadge, setNewServiceBadge] = useState('');
+  const [newServiceDesc, setNewServiceDesc] = useState('');
+  const [submittingService, setSubmittingService] = useState(false);
+  const [resettingServices, setResettingServices] = useState(false);
+
+  // Fetch Services for Manager
+  const fetchManagerServices = useCallback(async () => {
+    try {
+      setLoadingManagerServices(true);
+      const res = await fetch(`${API_BASE_URL}/services`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result && Array.isArray(result.data)) {
+          setManagerServices(result.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching manager services:', err);
+    } finally {
+      setLoadingManagerServices(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchManagerServices();
+  }, [fetchManagerServices]);
+
+  const handleAddService = async (e) => {
+    e.preventDefault();
+    if (!newServiceTitle.trim()) {
+      triggerToast('Service Name is required', 'warning');
+      return;
+    }
+
+    setSubmittingService(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/services`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newServiceTitle.trim(),
+          category: newServiceCategory,
+          badge: newServiceBadge.trim() || 'LUXURY',
+          description: newServiceDesc.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        triggerToast('✨ New service added successfully!', 'success');
+        setNewServiceTitle('');
+        setNewServiceBadge('');
+        setNewServiceDesc('');
+        fetchManagerServices();
+      } else {
+        triggerToast('Failed to add service', 'error');
+      }
+    } catch (err) {
+      console.error('Error adding service:', err);
+      triggerToast('An error occurred while adding service', 'error');
+    } finally {
+      setSubmittingService(false);
+    }
+  };
+
+  const handleDeleteService = async (serviceId, serviceTitle) => {
+    if (!window.confirm(`Are you sure you want to delete "${serviceTitle}"?`)) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/services/${encodeURIComponent(serviceId)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        triggerToast(`Deleted "${serviceTitle}" successfully`, 'success');
+        fetchManagerServices();
+      } else {
+        triggerToast('Failed to delete service', 'error');
+      }
+    } catch (err) {
+      console.error('Error deleting service:', err);
+      triggerToast('Error deleting service', 'error');
+    }
+  };
+
+  const handleResetServices = async () => {
+    if (!window.confirm('Are you sure you want to reset all services back to default resort items? Custom services will be removed.')) return;
+
+    setResettingServices(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/services/reset`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        triggerToast('🔄 Services reset to resort defaults!', 'success');
+        fetchManagerServices();
+      } else {
+        triggerToast('Failed to reset services', 'error');
+      }
+    } catch (err) {
+      console.error('Error resetting services:', err);
+      triggerToast('Error resetting services', 'error');
+    } finally {
+      setResettingServices(false);
+    }
+  };
 
   const scrollToSection = (sectionRef, tabName) => {
     setActiveNavTab(tabName);
@@ -2143,6 +2325,7 @@ function ManagerView() {
           else if (entry.target === qrGeneratorRef.current) setActiveNavTab('qr');
           else if (entry.target === liveFeedRef.current) setActiveNavTab('feed');
           else if (entry.target === reviewsRef.current) setActiveNavTab('reviews');
+          else if (entry.target === servicesManageRef.current) setActiveNavTab('services');
           else if (entry.target === galleryManageRef.current) setActiveNavTab('gallery');
         }
       });
@@ -2153,6 +2336,7 @@ function ManagerView() {
     if (qrGeneratorRef.current) observer.observe(qrGeneratorRef.current);
     if (liveFeedRef.current) observer.observe(liveFeedRef.current);
     if (reviewsRef.current) observer.observe(reviewsRef.current);
+    if (servicesManageRef.current) observer.observe(servicesManageRef.current);
     if (galleryManageRef.current) observer.observe(galleryManageRef.current);
 
     return () => {
@@ -3447,6 +3631,180 @@ function ManagerView() {
         )}
       </div>
 
+      {/* Services Manager Section */}
+      <div ref={servicesManageRef} className="scroll-mt-24 bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border space-y-8 shadow-stripe">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
+          <div className="flex items-center space-x-3.5">
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
+              <ClipboardList className="w-6 h-6 text-brand-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl text-brand-heading font-semibold tracking-tight">Services Manager</h2>
+              <p className="text-xs text-brand-body mt-0.5">Manage and update active resort services offered on the Guest Portal</p>
+            </div>
+          </div>
+
+          <button
+            id="reset-services-btn"
+            disabled={resettingServices}
+            onClick={handleResetServices}
+            className="px-5 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-xl transition-all text-xs font-bold flex items-center space-x-2 shadow-sm cursor-pointer disabled:opacity-50 self-start sm:self-center"
+          >
+            <RefreshCw className={`w-4 h-4 text-red-600 ${resettingServices ? 'animate-spin' : ''}`} />
+            <span>{resettingServices ? 'Resetting...' : 'Reset to Default Services'}</span>
+          </button>
+        </div>
+
+        {/* Form to Add New Service */}
+        <form onSubmit={handleAddService} className="bg-brand-surface p-6 sm:p-8 rounded-xl border border-brand-border space-y-6">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-brand-heading border-b border-brand-border pb-3">
+            Add New Resort Service
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label htmlFor="service-name-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+                Service Name *
+              </label>
+              <input
+                id="service-name-input"
+                type="text"
+                value={newServiceTitle}
+                onChange={(e) => setNewServiceTitle(e.target.value)}
+                placeholder="e.g. Iced Cappuccino"
+                className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="service-category-select" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+                Category *
+              </label>
+              <select
+                id="service-category-select"
+                value={newServiceCategory}
+                onChange={(e) => setNewServiceCategory(e.target.value)}
+                className="w-full bg-white border border-brand-border text-brand-heading text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all cursor-pointer"
+              >
+                <option value="In-Suite Dining & Bar">In-Suite Dining &amp; Bar</option>
+                <option value="Housekeeping & Comfort">Housekeeping &amp; Comfort</option>
+                <option value="Concierge & Guest Experience">Concierge &amp; Guest Experience</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="service-tag-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+                Tag / Subtitle
+              </label>
+              <input
+                id="service-tag-input"
+                type="text"
+                value={newServiceBadge}
+                onChange={(e) => setNewServiceBadge(e.target.value)}
+                placeholder="e.g. BEVERAGE, HYDRATION, LUXURY"
+                className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="service-desc-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+              Description
+            </label>
+            <input
+              id="service-desc-input"
+              type="text"
+              value={newServiceDesc}
+              onChange={(e) => setNewServiceDesc(e.target.value)}
+              placeholder="e.g. Freshly brewed iced espresso with chilled oat milk"
+              className="w-full bg-white border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-brand-primary font-semibold transition-all"
+            />
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <button
+              id="add-service-submit-btn"
+              type="submit"
+              disabled={submittingService}
+              className="px-6 py-3 bg-brand-primary hover:opacity-90 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-all shadow-stripe hover:shadow-stripe-hover flex items-center space-x-2 border border-brand-border cursor-pointer active:scale-[0.98]"
+            >
+              <Send className="w-4 h-4 text-white" />
+              <span>{submittingService ? 'Adding Service...' : 'Add Service'}</span>
+            </button>
+          </div>
+        </form>
+
+        {/* Visual Grid of Currently Active Services Grouped by Category */}
+        <div className="space-y-8 pt-4">
+          <div className="flex items-center justify-between border-b border-brand-border pb-3">
+            <h3 className="text-lg text-brand-heading font-semibold tracking-tight">Active Resort Services Grid</h3>
+            <span className="text-xs text-brand-body font-mono">Total Services: {managerServices.length}</span>
+          </div>
+
+          {loadingManagerServices ? (
+            <div className="text-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin text-brand-primary mx-auto" />
+              <p className="text-xs text-brand-body mt-2">Loading dynamic services...</p>
+            </div>
+          ) : (
+            ['In-Suite Dining & Bar', 'Housekeeping & Comfort', 'Concierge & Guest Experience'].map((categoryName) => {
+              const categoryItems = managerServices.filter(
+                (s) => s.category === categoryName || (s.category || '').toLowerCase().includes(categoryName.split(' ')[0].toLowerCase())
+              );
+
+              return (
+                <div key={categoryName} className="space-y-4">
+                  <div className="flex items-center space-x-3 border-l-4 border-slate-800 pl-3">
+                    <h4 className="font-bold text-slate-800 text-sm">{categoryName}</h4>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-surface text-brand-body border border-brand-border">
+                      {categoryItems.length} items
+                    </span>
+                  </div>
+
+                  {categoryItems.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic pl-4">No active services in this category.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {categoryItems.map((service, idx) => (
+                        <div
+                          key={service.id || service.title || idx}
+                          className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-4 hover:border-slate-200 transition-all"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 pr-2">
+                              <span className="text-[9px] font-extrabold tracking-widest text-slate-400 uppercase block mb-1">
+                                {service.badge || service.tag || 'SERVICE'}
+                              </span>
+                              <h5 className="font-bold text-sm text-slate-800">{service.title}</h5>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-slate-500 leading-relaxed min-h-[36px]">
+                            {service.description || service.desc || 'No description provided.'}
+                          </p>
+
+                          <div className="pt-2 border-t border-slate-100 flex justify-end">
+                            <button
+                              id={`delete-service-btn-${(service.id || service.title).toString().toLowerCase().replace(/\s+/g, '-')}`}
+                              onClick={() => handleDeleteService(service.id || service.title, service.title)}
+                              className="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                              <span>Delete Service</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
       {/* Manage Gallery Section */}
       <div ref={galleryManageRef} className="scroll-mt-24 bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border space-y-8 shadow-stripe">
         <div className="flex items-center space-x-3.5 border-b border-brand-border pb-5">
@@ -3722,6 +4080,15 @@ function ManagerView() {
         >
           <QrCode className="w-5 h-5" />
           <span className="text-[10px] tracking-wide font-sans">QR Generator</span>
+        </button>
+        <button
+          onClick={() => scrollToSection(servicesManageRef, 'services')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'services' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <ClipboardList className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">Services Manager</span>
         </button>
         <button
           onClick={() => scrollToSection(reviewsRef, 'reviews')}

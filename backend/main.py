@@ -86,6 +86,81 @@ class GalleryItemUpdate(BaseModel):
     description: str
 
 
+class ServiceCreate(BaseModel):
+    title: str
+    category: str
+    badge: str = "GENERAL"
+    description: str = ""
+
+
+# Default fallback resort services dataset
+DEFAULT_SERVICES = [
+    # In-Suite Dining & Bar
+    {
+        "title": "Bottled Mineral Water",
+        "category": "In-Suite Dining & Bar",
+        "badge": "HYDRATION",
+        "description": "Ice-cold premium mineral water delivered to your suite"
+    },
+    {
+        "title": "Artisan Hot Tea",
+        "category": "In-Suite Dining & Bar",
+        "badge": "BEVERAGE",
+        "description": "Selection of organic loose-leaf teas with honey & lemon"
+    },
+    {
+        "title": "Fresh Espresso",
+        "category": "In-Suite Dining & Bar",
+        "badge": "BEVERAGE",
+        "description": "Freshly brewed double espresso or Americano"
+    },
+    {
+        "title": "Gourmet In-Room Meal",
+        "category": "In-Suite Dining & Bar",
+        "badge": "FINE DINING",
+        "description": "Chef-crafted warm culinary dishes served in suite"
+    },
+    # Housekeeping & Comfort
+    {
+        "title": "Extra Plush Towels",
+        "category": "Housekeeping & Comfort",
+        "badge": "AMENITIES",
+        "description": "Set of fresh Egyptian cotton bath towels and bathrobes"
+    },
+    {
+        "title": "Bed Turndown Service",
+        "category": "Housekeeping & Comfort",
+        "badge": "SERVICE",
+        "description": "Evening turndown, linen refresh & lavender mist"
+    },
+    {
+        "title": "Luxury Toiletries Set",
+        "category": "Housekeeping & Comfort",
+        "badge": "LUXURY",
+        "description": "Premium organic bath products & essential toiletries kit"
+    },
+    # Concierge & Guest Experience
+    {
+        "title": "Late Checkout Request",
+        "category": "Concierge & Guest Experience",
+        "badge": "FRONT DESK",
+        "description": "Request extended suite departure up to 2:00 PM"
+    },
+    {
+        "title": "Luggage Assistance",
+        "category": "Concierge & Guest Experience",
+        "badge": "CONCIERGE",
+        "description": "Porter service for suite luggage collection & storage"
+    },
+    {
+        "title": "Taxi Booking",
+        "category": "Concierge & Guest Experience",
+        "badge": "TRANSPORT",
+        "description": "Private airport transfer or city taxi arrangement"
+    }
+]
+
+
 
 # Root Health Check Endpoint
 @app.get("/")
@@ -489,6 +564,112 @@ async def checkout_room(room_number: str):
         "message": f"Successfully cleared all service requests for room {room_number}",
         "room": room_number,
         "deleted_records": response.data or []
+    }
+
+
+# GET /services - Fetch dynamic services or auto-populate defaults if table empty/missing
+@app.get("/services")
+async def get_services():
+    try:
+        response = supabase.table("services").select("*").execute()
+        if response.data and len(response.data) > 0:
+            return {
+                "status": "success",
+                "count": len(response.data),
+                "data": response.data
+            }
+        else:
+            # Seed defaults if empty
+            try:
+                insert_res = supabase.table("services").insert(DEFAULT_SERVICES).execute()
+                seeded_data = insert_res.data if insert_res.data else DEFAULT_SERVICES
+                return {
+                    "status": "success",
+                    "count": len(seeded_data),
+                    "data": seeded_data
+                }
+            except Exception as seed_err:
+                print(f"Error seeding services table: {seed_err}")
+                return {
+                    "status": "success",
+                    "count": len(DEFAULT_SERVICES),
+                    "data": DEFAULT_SERVICES
+                }
+    except Exception as e:
+        print(f"Error fetching services from Supabase: {e}")
+        return {
+            "status": "success",
+            "count": len(DEFAULT_SERVICES),
+            "data": DEFAULT_SERVICES
+        }
+
+
+# POST /services - Add a new service item
+@app.post("/services", status_code=status.HTTP_201_CREATED)
+async def create_service(service_data: ServiceCreate):
+    payload = {
+        "title": service_data.title,
+        "category": service_data.category,
+        "badge": service_data.badge,
+        "description": service_data.description
+    }
+
+    try:
+        response = supabase.table("services").insert(payload).execute()
+        if response.data and len(response.data) > 0:
+            inserted_record = response.data[0]
+        else:
+            inserted_record = payload
+    except Exception as e:
+        print(f"Error inserting service into Supabase: {e}")
+        inserted_record = {**payload, "id": str(os.urandom(4).hex())}
+
+    return {
+        "message": "Service created successfully",
+        "data": inserted_record
+    }
+
+
+# DELETE /services/{service_id} - Delete service by ID or title
+@app.delete("/services/{service_id}")
+async def delete_service(service_id: str):
+    formatted_id = int(service_id) if service_id.isdigit() else service_id
+    deleted_records = []
+    try:
+        response = supabase.table("services").delete().eq("id", formatted_id).execute()
+        deleted_records = response.data or []
+        if not deleted_records:
+            response_title = supabase.table("services").delete().eq("title", service_id).execute()
+            deleted_records = response_title.data or []
+    except Exception as e:
+        print(f"Error deleting service from Supabase: {e}")
+
+    return {
+        "message": f"Successfully deleted service {service_id}",
+        "service_id": service_id,
+        "deleted_records": deleted_records
+    }
+
+
+# POST /services/reset - Wipe custom entries and reset to default services
+@app.post("/services/reset")
+async def reset_services():
+    try:
+        supabase.table("services").delete().neq("id", -1).execute()
+    except Exception as e:
+        print(f"Error wiping services table: {e}")
+
+    seeded_data = DEFAULT_SERVICES
+    try:
+        insert_res = supabase.table("services").insert(DEFAULT_SERVICES).execute()
+        if insert_res.data:
+            seeded_data = insert_res.data
+    except Exception as e:
+        print(f"Error re-seeding default services: {e}")
+
+    return {
+        "message": "Services reset to default successfully",
+        "data": seeded_data
     }
 
 
