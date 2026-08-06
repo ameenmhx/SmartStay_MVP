@@ -91,6 +91,15 @@ class ServiceCreate(BaseModel):
     category: str
     tag: Optional[str] = ""
     description: Optional[str] = ""
+    is_quick_service: Optional[bool] = False
+
+
+class ServiceUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    tag: Optional[str] = None
+    description: Optional[str] = None
+    is_quick_service: Optional[bool] = None
 
 
 
@@ -525,6 +534,23 @@ async def checkout_room(room_number: str):
     }
 
 
+# GET /quick-services - Fetch services where is_quick_service is True
+@app.get("/quick-services")
+async def get_quick_services():
+    try:
+        response = supabase.table("services").select("*").eq("is_quick_service", True).execute()
+        return {
+            "status": "success",
+            "count": len(response.data) if response.data else 0,
+            "data": response.data or []
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch quick services from Supabase: {str(e)}"
+        )
+
+
 # GET /services - Fetch all services from the Supabase "services" table
 @app.get("/services")
 async def get_services():
@@ -549,7 +575,8 @@ async def create_service(service_data: ServiceCreate):
         "name": service_data.name,
         "category": service_data.category,
         "tag": service_data.tag or "",
-        "description": service_data.description or ""
+        "description": service_data.description or "",
+        "is_quick_service": service_data.is_quick_service if service_data.is_quick_service is not None else False
     }
 
     try:
@@ -571,6 +598,38 @@ async def create_service(service_data: ServiceCreate):
     return {
         "message": "Service created successfully",
         "data": inserted_record
+    }
+
+
+# PUT /services/{service_id} - Update a service in Supabase
+@app.put("/services/{service_id}")
+async def update_service(service_id: str, service_data: ServiceUpdate):
+    formatted_id = int(service_id) if service_id.isdigit() else service_id
+    payload = {k: v for k, v in service_data.model_dump(exclude_unset=True).items() if v is not None}
+    try:
+        response = (
+            supabase.table("services")
+            .update(payload)
+            .eq("id", formatted_id)
+            .execute()
+        )
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Service with id {service_id} not found."
+            )
+        updated_record = response.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update service {service_id}: {str(e)}"
+        )
+
+    return {
+        "message": "Service updated successfully",
+        "data": updated_record
     }
 
 

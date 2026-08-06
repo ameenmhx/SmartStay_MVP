@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClipboardList, RefreshCw, Send, Trash2 } from 'lucide-react';
+import { ClipboardList, RefreshCw, Send, Trash2, Star } from 'lucide-react';
 
 export default function ServicesManager({
   API_BASE_URL = 'http://localhost:8000',
@@ -13,6 +13,7 @@ export default function ServicesManager({
   const [category, setCategory] = useState('In-Suite Dining & Bar');
   const [tag, setTag] = useState('');
   const [description, setDescription] = useState('');
+  const [isQuickService, setIsQuickService] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleAddService = async (e) => {
@@ -29,6 +30,7 @@ export default function ServicesManager({
         category: category,
         tag: tag.trim(),
         description: description.trim(),
+        is_quick_service: isQuickService,
       };
 
       const res = await fetch(`${API_BASE_URL}/services`, {
@@ -38,19 +40,18 @@ export default function ServicesManager({
       });
 
       if (res.ok) {
-        const result = await res.json();
         triggerToast('✨ New service added successfully!', 'success');
         // Reset form fields on successful addition
         setName('');
         setTag('');
         setDescription('');
+        setIsQuickService(false);
         // Re-fetch the services list
         if (onRefreshServices) {
           await onRefreshServices();
         }
       } else {
         const errorData = await res.json().catch(() => ({ detail: res.statusText }));
-        // Log the exact server error message to the console for easy debugging
         console.error('Server error message adding service:', errorData);
         const errorMessage = errorData?.detail || errorData?.message || errorData?.error || 'Failed to add service';
         triggerToast(`Failed to add service: ${errorMessage}`, 'error');
@@ -60,6 +61,31 @@ export default function ServicesManager({
       triggerToast('An error occurred while adding service', 'error');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleToggleQuickService = async (service) => {
+    try {
+      const newStatus = !service.is_quick_service;
+      const res = await fetch(`${API_BASE_URL}/services/${service.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_quick_service: newStatus }),
+      });
+      if (res.ok) {
+        triggerToast(
+          newStatus
+            ? `⭐ "${service.name || service.title}" featured on Home Tab!`
+            : `Unpinned "${service.name || service.title}" from Home Tab`,
+          'success'
+        );
+        if (onRefreshServices) await onRefreshServices();
+      } else {
+        triggerToast('Failed to update quick service status', 'error');
+      }
+    } catch (err) {
+      console.error('Error updating quick service status:', err);
+      triggerToast('Error updating service status', 'error');
     }
   };
 
@@ -152,6 +178,20 @@ export default function ServicesManager({
           />
         </div>
 
+        {/* Quick Service Toggle Checkbox */}
+        <div className="flex items-center space-x-3 pt-1">
+          <input
+            id="service-quick-toggle"
+            type="checkbox"
+            checked={isQuickService}
+            onChange={(e) => setIsQuickService(e.target.checked)}
+            className="w-4 h-4 text-brand-primary border-brand-border rounded focus:ring-brand-primary cursor-pointer"
+          />
+          <label htmlFor="service-quick-toggle" className="text-xs font-bold text-slate-800 cursor-pointer select-none flex items-center space-x-1.5">
+            <span>⭐ Feature on Home Tab (Quick Service)</span>
+          </label>
+        </div>
+
         <div className="pt-2 flex justify-end">
           <button
             id="add-service-submit-btn"
@@ -199,13 +239,21 @@ export default function ServicesManager({
                     {categoryItems.map((service) => (
                       <div
                         key={service.id}
-                        className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-4 hover:border-slate-200 transition-all"
+                        className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-4 hover:border-slate-200 transition-all relative group"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1 pr-2">
-                            <span className="text-[9px] font-extrabold tracking-widest text-slate-400 uppercase block mb-1">
-                              {service.tag || service.badge || 'SERVICE'}
-                            </span>
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-[9px] font-extrabold tracking-widest text-slate-400 uppercase block">
+                                {service.tag || service.badge || 'SERVICE'}
+                              </span>
+                              {service.is_quick_service && (
+                                <span className="px-2 py-0.5 text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-full flex items-center gap-1">
+                                  <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                                  <span>Quick Service</span>
+                                </span>
+                              )}
+                            </div>
                             <h5 className="font-bold text-sm text-slate-800">{service.name || service.title}</h5>
                           </div>
                         </div>
@@ -214,14 +262,28 @@ export default function ServicesManager({
                           {service.description || service.desc || 'No description provided.'}
                         </p>
 
-                        <div className="pt-2 border-t border-slate-100 flex justify-end">
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <button
+                            id={`toggle-quick-btn-${String(service.id)}`}
+                            onClick={() => handleToggleQuickService(service)}
+                            className={`py-1.5 px-2.5 rounded-xl text-[11px] font-semibold transition-all flex items-center space-x-1 cursor-pointer border ${
+                              service.is_quick_service
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                            title={service.is_quick_service ? 'Unpin from Home Tab' : 'Pin to Home Tab as Quick Service'}
+                          >
+                            <Star className={`w-3 h-3 ${service.is_quick_service ? 'fill-amber-500 text-amber-500' : 'text-slate-400'}`} />
+                            <span>{service.is_quick_service ? 'Unpin' : 'Pin Home'}</span>
+                          </button>
+
                           <button
                             id={`delete-service-btn-${String(service.id)}`}
                             onClick={() => onDeleteService(service.id, service.name || service.title)}
-                            className="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer"
+                            className="py-1.5 px-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-[11px] font-semibold transition-all flex items-center space-x-1 cursor-pointer"
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                            <span>Delete Service</span>
+                            <Trash2 className="w-3 h-3 text-red-500" />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </div>

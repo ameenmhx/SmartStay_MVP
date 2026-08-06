@@ -518,6 +518,8 @@ function GuestView({ roomFromUrl }) {
 
   const [dynamicServices, setDynamicServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
+  const [quickServices, setQuickServices] = useState([]);
+  const [loadingQuickServices, setLoadingQuickServices] = useState(true);
 
   const fetchGuestServices = useCallback(async () => {
     try {
@@ -535,25 +537,43 @@ function GuestView({ roomFromUrl }) {
     }
   }, []);
 
+  const fetchQuickServices = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/quick-services`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result && Array.isArray(result.data)) {
+          setQuickServices(result.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching quick services:', err);
+    } finally {
+      setLoadingQuickServices(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchGuestServices();
-  }, [fetchGuestServices]);
+    fetchQuickServices();
+  }, [fetchGuestServices, fetchQuickServices]);
+
+  const getItemIcon = useCallback((title = '', badge = '', category = '') => {
+    const text = (title + ' ' + (badge || '') + ' ' + (category || '')).toLowerCase();
+    if (text.includes('water') || text.includes('hydration') || text.includes('drop')) return Droplets;
+    if (text.includes('tea') || text.includes('coffee') || text.includes('beverage')) return Coffee;
+    if (text.includes('meal') || text.includes('dining') || text.includes('food') || text.includes('bar')) return UtensilsCrossed;
+    if (text.includes('towel') || text.includes('bath') || text.includes('toiletri')) return Bath;
+    if (text.includes('cleaning') || text.includes('turndown') || text.includes('refresh') || text.includes('housekeeping')) return Sparkles;
+    if (text.includes('laundry') || text.includes('press') || text.includes('garment')) return Shirt;
+    if (text.includes('taxi') || text.includes('chauffeur') || text.includes('transport') || text.includes('car')) return Car;
+    if (text.includes('call') || text.includes('clock') || text.includes('alarm')) return Clock;
+    if (text.includes('checkout') || text.includes('luggage') || text.includes('concierge')) return LogOut;
+    return Sparkles;
+  }, []);
 
   // Dynamic Request Categories Scope
   const serviceCategories = useMemo(() => {
-    const getItemIcon = (title, badge, category) => {
-      const text = (title + ' ' + (badge || '') + ' ' + (category || '')).toLowerCase();
-      if (text.includes('water') || text.includes('hydration') || text.includes('drop')) return Droplets;
-      if (text.includes('tea') || text.includes('coffee') || text.includes('beverage')) return Coffee;
-      if (text.includes('meal') || text.includes('dining') || text.includes('food') || text.includes('bar')) return UtensilsCrossed;
-      if (text.includes('towel') || text.includes('bath') || text.includes('toiletri')) return Bath;
-      if (text.includes('cleaning') || text.includes('turndown') || text.includes('refresh') || text.includes('housekeeping')) return Sparkles;
-      if (text.includes('laundry') || text.includes('press') || text.includes('garment')) return Shirt;
-      if (text.includes('taxi') || text.includes('chauffeur') || text.includes('transport') || text.includes('car')) return Car;
-      if (text.includes('call') || text.includes('clock') || text.includes('alarm')) return Clock;
-      if (text.includes('checkout') || text.includes('luggage') || text.includes('concierge')) return LogOut;
-      return Sparkles;
-    };
 
     const categories = [
       {
@@ -581,8 +601,9 @@ function GuestView({ roomFromUrl }) {
 
     // Guard against null/undefined dynamicServices state
     (dynamicServices || []).forEach((serv) => {
-      const servTitle = serv.title || '';
-      const catStr = (serv.category || '').toLowerCase();
+      const servName = serv.name || serv.title || '';
+      const servCategory = serv.category || '';
+      const catStr = servCategory.toLowerCase();
       let targetCat = categories.find((c) => c.title.toLowerCase() === catStr || c.id === catStr);
       if (!targetCat) {
         if (catStr.includes('dining') || catStr.includes('food') || catStr.includes('bar') || catStr.includes('room_service')) {
@@ -596,10 +617,12 @@ function GuestView({ roomFromUrl }) {
 
       targetCat.items.push({
         id: serv.id,
-        title: servTitle,
+        name: servName,
+        title: servName,
+        category: servCategory,
         desc: serv.description || serv.desc || '',
         badge: serv.badge || serv.tag || 'SERVICE',
-        icon: getItemIcon(servTitle, serv.badge || serv.tag, serv.category),
+        icon: getItemIcon(servName, serv.badge || serv.tag, servCategory),
       });
     });
 
@@ -705,32 +728,50 @@ function GuestView({ roomFromUrl }) {
     }
   };
 
-  const dispatchOrder = async (itemName, isEmergency = false) => {
-    const safeItemName = String(itemName ?? '').trim();
+  const dispatchOrder = async (itemParam, isEmergency = false) => {
+    let safeItemName = '';
+    let category = '';
+
+    if (typeof itemParam === 'object' && itemParam !== null) {
+      safeItemName = String(itemParam.name || itemParam.title || '').trim();
+      category = String(itemParam.category || '').trim();
+    } else {
+      safeItemName = String(itemParam ?? '').trim();
+    }
+
     if (!safeItemName) return;
+
+    const roomNumber = selectedRoom || roomFromUrl || (new URLSearchParams(window.location.search)).get('room') || '';
     setLoadingItem(safeItemName);
 
     const targetItemName = isEmergency ? 'EMERGENCY' : safeItemName;
 
     try {
+      const payload = {
+        room_number: roomNumber,
+        item_requested: targetItemName,
+      };
+      if (category) {
+        payload.category = category;
+      }
+
       const response = await fetch(`${API_BASE_URL}/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          room_number: selectedRoom,
-          item_requested: targetItemName,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP Error ${response.status}`);
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`HTTP Error ${response.status}${errorText ? `: ${errorText}` : ''}`);
       }
 
       const resData = await response.json();
       const newRecord = resData?.data || {
         id: 'Req-' + Math.floor(Math.random() * 1000),
-        room_number: selectedRoom,
+        room_number: roomNumber,
         item_requested: targetItemName,
+        category: category,
         status: 'Pending',
       };
 
@@ -740,27 +781,37 @@ function GuestView({ roomFromUrl }) {
       ]);
 
       if (isEmergency) {
-        triggerToast(`🚨 EMERGENCY SOS DISPATCHED for ${selectedRoom}! Resort staff notified instantly.`, 'error');
+        triggerToast(`🚨 EMERGENCY SOS DISPATCHED for Room ${roomNumber}! Resort staff notified instantly.`, 'error');
       } else {
-        triggerToast(`Request for "${safeItemName}" sent to resort staff!`, 'success');
+        triggerToast(`Order for ${safeItemName} placed successfully!`, 'success');
       }
 
       if (safeItemName === customItem) setCustomItem('');
     } catch (err) {
-      console.error('Request failed:', err);
+      console.error('Order submission failed:', err);
       triggerToast(`Failed to send request: ${err.message}.`, 'error');
     } finally {
       setLoadingItem(null);
     }
   };
 
-  const handleOrder = (itemName, isEmergency = false) => {
-    const safeItemName = String(itemName ?? '').trim();
-    if (!safeItemName) return;
-    if (isEmergency) {
-      dispatchOrder(safeItemName, isEmergency);
+  const handleOrder = (itemParam, isEmergency = false) => {
+    let safeItemName = '';
+    let category = '';
+
+    if (typeof itemParam === 'object' && itemParam !== null) {
+      safeItemName = String(itemParam.name || itemParam.title || '').trim();
+      category = String(itemParam.category || '').trim();
     } else {
-      setItemToConfirm(safeItemName);
+      safeItemName = String(itemParam ?? '').trim();
+    }
+
+    if (!safeItemName) return;
+
+    if (isEmergency) {
+      dispatchOrder({ name: safeItemName, category }, isEmergency);
+    } else {
+      setItemToConfirm({ name: safeItemName, category });
     }
   };
 
@@ -864,7 +915,7 @@ function GuestView({ roomFromUrl }) {
             <div className="space-y-2">
               <h3 className="text-lg font-bold text-slate-800 tracking-tight">Confirm Request</h3>
               <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                Would you like to request <span className="font-bold text-slate-800">{itemToConfirm}</span> for Room <span className="font-bold text-slate-800">{selectedRoom}</span>?
+                Would you like to request <span className="font-bold text-slate-800">{typeof itemToConfirm === 'object' ? itemToConfirm.name : itemToConfirm}</span> for Room <span className="font-bold text-slate-800">{selectedRoom}</span>?
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -878,9 +929,9 @@ function GuestView({ roomFromUrl }) {
               <button
                 id="confirm-order-btn"
                 onClick={() => {
-                  const item = itemToConfirm;
+                  const target = itemToConfirm;
                   setItemToConfirm(null);
-                  dispatchOrder(item);
+                  dispatchOrder(target);
                 }}
                 className="flex-1 px-5 py-3 rounded-xl bg-brand-primary hover:bg-slate-800 text-white text-xs font-bold transition-all duration-200 shadow-stripe cursor-pointer"
               >
@@ -936,23 +987,30 @@ function GuestView({ roomFromUrl }) {
           </div>
         </div>
 
-        {/* Dynamic Quick Suggestions (Time-Based) */}
+        {/* Dynamic Quick Suggestions (Quick Services) */}
         <div className="mt-8 pt-6 border-t border-slate-200/40 relative z-10">
           <div className="flex items-center space-x-2 mb-4">
             <Zap className="w-4 h-4 text-amber-500 animate-pulse" />
             <span className={`text-xs font-bold uppercase tracking-wider ${timeContext.quickSuggestHeader}`}>
-              Curated Suggestions for {timeContext.greeting}
+              Curated Quick Services for {timeContext.greeting}
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {(timeContext.suggestions || []).map((item) => {
-              const ItemIcon = item.icon || Sparkles;
-              const itemTitle = item.title || item.id || '';
-              const isLoading = loadingItem === itemTitle;
+            {loadingQuickServices ? (
+              <div className="col-span-full text-center py-6">
+                <RefreshCw className="w-5 h-5 animate-spin text-slate-400 mx-auto" />
+                <p className="text-xs text-slate-400 mt-2 font-medium">Loading featured quick services...</p>
+              </div>
+            ) : (quickServices && quickServices.length > 0 ? quickServices : timeContext.suggestions || []).map((item) => {
+              const itemName = item.name || item.title || item.id || '';
+              const itemTag = item.tag || item.badge || item.category || 'Quick Service';
+              const ItemIcon = item.icon || getItemIcon(itemName, itemTag, item.category) || Sparkles;
+              const isLoading = loadingItem === itemName;
+              const safeId = String(item.id ?? itemName).toLowerCase().replace(/[^a-z0-9-]/g, '-');
               return (
                 <div
-                  key={item.id}
+                  key={item.id ?? itemName}
                   className={`p-4 rounded-2xl transition-all flex items-center justify-between gap-3 group shadow-sm hover:shadow ${timeContext.suggestionCardBg}`}
                 >
                   <div className="flex items-center space-x-3">
@@ -960,14 +1018,19 @@ function GuestView({ roomFromUrl }) {
                       <ItemIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className={`text-xs font-bold ${timeContext.suggestionTitle}`}>{itemTitle}</h4>
-                      <span className={`text-[10px] block mt-0.5 ${timeContext.suggestionMuted || 'text-slate-400'}`}>{item.desc || ''}</span>
+                      <div className="flex items-center space-x-1.5">
+                        <h4 className={`text-xs font-bold ${timeContext.suggestionTitle}`}>{itemName}</h4>
+                        <span className="text-[9px] font-bold text-amber-500">⭐</span>
+                      </div>
+                      <span className={`text-[10px] block mt-0.5 ${timeContext.suggestionMuted || 'text-slate-400'}`}>
+                        {item.description || item.desc || itemTag}
+                      </span>
                     </div>
                   </div>
                   <button
-                    id={`quick-suggest-btn-${String(item.id).toLowerCase().replace(/\s+/g, '-')}`}
+                    id={`quick-suggest-btn-${safeId}`}
                     disabled={isLoading}
-                    onClick={() => handleOrder(itemTitle)}
+                    onClick={() => handleOrder(item)}
                     className={`px-3.5 py-2 rounded-xl text-[11px] font-semibold transition-all shrink-0 flex items-center gap-1 cursor-pointer border border-transparent disabled:opacity-50 ${timeContext.suggestionBtn}`}
                   >
                     {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <span>Request</span>}
@@ -1084,12 +1147,12 @@ function GuestView({ roomFromUrl }) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     {(cat.items || []).map((item) => {
                       const ItemIcon = item.icon || Sparkles;
-                      const itemTitle = item.title || '';
-                      const isLoading = loadingItem === itemTitle;
-                      const safeId = String(item.id ?? itemTitle).toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                      const itemName = item.name || item.title || '';
+                      const isLoading = loadingItem === itemName;
+                      const safeId = String(item.id ?? itemName).toLowerCase().replace(/[^a-z0-9-]/g, '-');
                       return (
                         <div
-                          key={item.id ?? itemTitle}
+                          key={item.id ?? itemName}
                           className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-5 hover:border-slate-200/80 hover:shadow-md transition-all duration-300 group"
                         >
                           <div className="flex items-start justify-between">
@@ -1102,14 +1165,14 @@ function GuestView({ roomFromUrl }) {
                           </div>
 
                           <div>
-                            <h3 className="font-bold text-sm text-slate-800">{itemTitle}</h3>
+                            <h3 className="font-bold text-sm text-slate-800">{itemName}</h3>
                             <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{item.desc || ''}</p>
                           </div>
 
                           <button
                             id={`request-btn-${safeId}`}
                             disabled={isLoading}
-                            onClick={() => handleOrder(itemTitle)}
+                            onClick={() => handleOrder(item)}
                             className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer border border-transparent disabled:opacity-50"
                           >
                             {isLoading ? (
