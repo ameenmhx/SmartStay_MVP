@@ -49,10 +49,19 @@ import {
   Image,
   UploadCloud,
   Trash2,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
+import {
+  playNotificationSound,
+  initAudioContext,
+  isAudioEnabled,
+  toggleAudio,
+  subscribeAudioState,
+} from './soundEffects';
 
 const API_BASE_URL = 'https://smartstay-backend-3wbb.onrender.com';
 const WS_URL = 'wss://smartstay-backend-3wbb.onrender.com/ws/waiter';
@@ -1690,6 +1699,24 @@ function WaiterView() {
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [filter, setFilter] = useState('Pending'); // 'ALL' | 'Pending' | 'On the Way' | 'Delivered'
   const [newIncomingCount, setNewIncomingCount] = useState(0);
+  const [audioAlertsEnabled, setAudioAlertsEnabled] = useState(isAudioEnabled());
+
+  useEffect(() => {
+    const unsubscribe = subscribeAudioState((enabled) => {
+      setAudioAlertsEnabled(enabled);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleToggleAudio = () => {
+    const enabled = toggleAudio();
+    if (enabled) {
+      playNotificationSound();
+      triggerToast('Audio alerts enabled', 'success');
+    } else {
+      triggerToast('Audio alerts muted', 'info');
+    }
+  };
 
   const socketRef = useRef(null);
   const requestsStateRef = useRef([]);
@@ -1736,6 +1763,7 @@ function WaiterView() {
         const parsed = JSON.parse(event.data);
 
         if (parsed.event === 'NEW_SERVICE_REQUEST' && parsed.data) {
+          playNotificationSound();
           const newReq = { ...parsed.data, status: normalizeStatus(parsed.data.status) };
           setRequests((prev) => {
             if (newReq.id && prev.some((r) => String(r.id) === String(newReq.id))) {
@@ -1757,8 +1785,11 @@ function WaiterView() {
           const cancelledId = parsed.request_id;
           setRequests((prev) => prev.filter((r) => String(r.id) !== String(cancelledId)));
         } else if (parsed.type === 'checkout' || parsed.event === 'checkout') {
+          playNotificationSound();
           const checkedOutRoom = parsed.room || parsed.room_number || parsed.data?.room;
           setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
+        } else if (parsed.type === 'ping' || parsed.type === 'service_request' || parsed.type === 'new_request') {
+          playNotificationSound();
         } else if (parsed.type === 'clear_completed') {
           setRequests((prev) =>
             prev.filter(
@@ -1891,6 +1922,29 @@ function WaiterView() {
               </>
             )}
           </div>
+
+          <button
+            id="waiter-audio-toggle-btn"
+            onClick={handleToggleAudio}
+            className={`p-2 px-3.5 rounded-lg border text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer shadow-stripe ${
+              audioAlertsEnabled
+                ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                : 'bg-brand-surface text-brand-body border-brand-border hover:bg-brand-surface/80'
+            }`}
+            title={audioAlertsEnabled ? 'Disable Audio Alerts' : 'Enable Audio Alerts'}
+          >
+            {audioAlertsEnabled ? (
+              <>
+                <Volume2 className="w-4 h-4 text-amber-600 animate-pulse" />
+                <span className="hidden sm:inline">Audio Enabled</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-4 h-4 text-gray-400" />
+                <span className="hidden sm:inline">Enable Audio</span>
+              </>
+            )}
+          </button>
 
           <button
             id="ws-reconnect-btn"
@@ -2146,6 +2200,24 @@ function ManagerView() {
   const [wsStatus, setWsStatus] = useState('CONNECTING');
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [audioAlertsEnabled, setAudioAlertsEnabled] = useState(isAudioEnabled());
+
+  useEffect(() => {
+    const unsubscribe = subscribeAudioState((enabled) => {
+      setAudioAlertsEnabled(enabled);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleToggleAudio = () => {
+    const enabled = toggleAudio();
+    if (enabled) {
+      playNotificationSound();
+      triggerToast('Audio alerts enabled', 'success');
+    } else {
+      triggerToast('Audio alerts muted', 'info');
+    }
+  };
   
   // Single Mode State
   const [qrRoomNumber, setQrRoomNumber] = useState('101');
@@ -2875,6 +2947,7 @@ function ManagerView() {
         const parsed = JSON.parse(event.data);
 
         if (parsed.event === 'NEW_SERVICE_REQUEST' && parsed.data) {
+          playNotificationSound();
           const newReq = { ...parsed.data, status: normalizeStatus(parsed.data.status) };
           setRequests((prev) => {
             if (newReq.id && prev.some((r) => String(r.id) === String(newReq.id))) {
@@ -2927,6 +3000,7 @@ function ManagerView() {
             ...prev.slice(0, 49),
           ]);
         } else if (parsed.type === 'checkout' || parsed.event === 'checkout') {
+          playNotificationSound();
           const checkedOutRoom = parsed.room || parsed.room_number || parsed.data?.room;
           setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
           setActivityLogs((prev) => [
@@ -2940,6 +3014,8 @@ function ManagerView() {
             },
             ...prev.slice(0, 49),
           ]);
+        } else if (parsed.type === 'ping' || parsed.type === 'service_request' || parsed.type === 'new_request') {
+          playNotificationSound();
         } else if (parsed.type === 'clear_completed') {
           setRequests((prev) =>
             prev.filter(
@@ -3033,6 +3109,29 @@ function ManagerView() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
+          <button
+            id="manager-audio-toggle-btn"
+            onClick={handleToggleAudio}
+            className={`p-2 px-4 rounded-lg border text-xs font-semibold flex items-center space-x-2 transition-all cursor-pointer shadow-stripe ${
+              audioAlertsEnabled
+                ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                : 'bg-brand-surface text-brand-body border-brand-border hover:bg-brand-surface/80'
+            }`}
+            title={audioAlertsEnabled ? 'Disable Audio Alerts' : 'Enable Audio Alerts'}
+          >
+            {audioAlertsEnabled ? (
+              <>
+                <Volume2 className="w-4 h-4 text-amber-600 animate-pulse" />
+                <span>Audio Enabled</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-4 h-4 text-gray-400" />
+                <span>Enable Audio</span>
+              </>
+            )}
+          </button>
+
           <button
             id="manager-clear-completed-btn"
             onClick={handleClearCompleted}
