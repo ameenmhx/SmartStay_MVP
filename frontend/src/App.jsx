@@ -1806,22 +1806,25 @@ function WaiterView() {
     }
   }, []);
 
-  // Setup WebSocket connection
+  // Setup WebSocket connection with strict listener cleanup
   const connectWebSocket = useCallback(() => {
     if (socketRef.current) {
-      socketRef.current.close();
+      try {
+        socketRef.current.close();
+      } catch (e) {}
+      socketRef.current = null;
     }
 
     setWsStatus('CONNECTING');
     const ws = new WebSocket(WS_URL);
     socketRef.current = ws;
 
-    ws.onopen = () => {
+    const handleOpen = () => {
       console.log('WebSocket connected to', WS_URL);
       setWsStatus('CONNECTED');
     };
 
-    ws.onmessage = (event) => {
+    const handleMessage = (event) => {
       try {
         const parsed = JSON.parse(event.data);
 
@@ -1874,22 +1877,46 @@ function WaiterView() {
       }
     };
 
-    ws.onerror = (error) => {
+    const handleError = (error) => {
       console.error('WebSocket error:', error);
       setWsStatus('DISCONNECTED');
     };
 
-    ws.onclose = () => {
+    const handleClose = () => {
       setWsStatus('DISCONNECTED');
+    };
+
+    ws.addEventListener('open', handleOpen);
+    ws.addEventListener('message', handleMessage);
+    ws.addEventListener('error', handleError);
+    ws.addEventListener('close', handleClose);
+
+    return () => {
+      ws.removeEventListener('open', handleOpen);
+      ws.removeEventListener('message', handleMessage);
+      ws.removeEventListener('error', handleError);
+      ws.removeEventListener('close', handleClose);
+      try {
+        ws.close();
+      } catch (e) {}
+      if (socketRef.current === ws) {
+        socketRef.current = null;
+      }
     };
   }, []);
 
   useEffect(() => {
     fetchRequests();
-    connectWebSocket();
+    const cleanupWs = connectWebSocket();
 
     return () => {
-      if (socketRef.current) socketRef.current.close();
+      if (cleanupWs) cleanupWs();
+      if (socketRef.current) {
+        try {
+          socketRef.current.close();
+        } catch (e) {}
+        socketRef.current = null;
+      }
     };
   }, [fetchRequests, connectWebSocket]);
 
@@ -2298,34 +2325,49 @@ function ManagerView() {
         item_name: req.item_requested || 'Service Request',
       };
 
-      // Broadcast over active Manager WebSocket connection
+      let wsSuccess = false;
       if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({
-          event: 'NUDGE_WAITER',
-          ...payload
-        }));
+        try {
+          socketRef.current.send(JSON.stringify({
+            event: 'NUDGE_WAITER',
+            ...payload
+          }));
+          wsSuccess = true;
+        } catch (wsErr) {
+          console.error('Error sending WS nudge:', wsErr);
+        }
       }
 
-      // Send to backend HTTP API endpoint
-      fetch(`${API_BASE_URL}/nudge`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch((err) => console.error('Error triggering nudge API:', err));
+      let apiSuccess = false;
+      try {
+        const res = await fetch(`${API_BASE_URL}/nudge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok || res.status === 200) {
+          apiSuccess = true;
+        }
+      } catch (apiErr) {
+        console.error('Error triggering nudge API:', apiErr);
+      }
 
-      triggerToast(`Reminder sent to Waiter for Room ${req.room_number}`, 'success');
-
-      setActivityLogs((prev) => [
-        {
-          id: Date.now() + Math.random(),
-          type: 'NUDGE',
-          timestamp: new Date().toLocaleTimeString(),
-          message: `Reminded waiter for Room ${req.room_number} (${payload.item_name})`,
-          room: req.room_number,
-          status: 'Reminded',
-        },
-        ...prev.slice(0, 49),
-      ]);
+      if (apiSuccess || wsSuccess) {
+        triggerToast(`Reminder sent to Waiter for Room ${req.room_number}`, 'success');
+        setActivityLogs((prev) => [
+          {
+            id: Date.now() + Math.random(),
+            type: 'NUDGE',
+            timestamp: new Date().toLocaleTimeString(),
+            message: `Reminded waiter for Room ${req.room_number} (${payload.item_name})`,
+            room: req.room_number,
+            status: 'Reminded',
+          },
+          ...prev.slice(0, 49),
+        ]);
+      } else {
+        triggerToast(`Failed to send reminder for Room ${req.room_number}`, 'error');
+      }
     } catch (err) {
       console.error('Failed to remind waiter:', err);
       triggerToast(`Failed to send reminder for Room ${req.room_number}`, 'error');
@@ -3042,22 +3084,25 @@ function ManagerView() {
     }
   }, []);
 
-  // Setup WebSocket connection for real-time manager updates
+  // Setup WebSocket connection for real-time manager updates with strict listener cleanup
   const connectWebSocket = useCallback(() => {
     if (socketRef.current) {
-      socketRef.current.close();
+      try {
+        socketRef.current.close();
+      } catch (e) {}
+      socketRef.current = null;
     }
 
     setWsStatus('CONNECTING');
     const ws = new WebSocket(WS_URL);
     socketRef.current = ws;
 
-    ws.onopen = () => {
+    const handleOpen = () => {
       console.log('Manager WebSocket connected');
       setWsStatus('CONNECTED');
     };
 
-    ws.onmessage = (event) => {
+    const handleMessage = (event) => {
       try {
         const parsed = JSON.parse(event.data);
 
@@ -3158,17 +3203,41 @@ function ManagerView() {
       }
     };
 
-    ws.onerror = () => setWsStatus('DISCONNECTED');
-    ws.onclose = () => setWsStatus('DISCONNECTED');
+    const handleError = () => setWsStatus('DISCONNECTED');
+    const handleClose = () => setWsStatus('DISCONNECTED');
+
+    ws.addEventListener('open', handleOpen);
+    ws.addEventListener('message', handleMessage);
+    ws.addEventListener('error', handleError);
+    ws.addEventListener('close', handleClose);
+
+    return () => {
+      ws.removeEventListener('open', handleOpen);
+      ws.removeEventListener('message', handleMessage);
+      ws.removeEventListener('error', handleError);
+      ws.removeEventListener('close', handleClose);
+      try {
+        ws.close();
+      } catch (e) {}
+      if (socketRef.current === ws) {
+        socketRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
     fetchRequests();
     fetchReviews();
-    connectWebSocket();
+    const cleanupWs = connectWebSocket();
 
     return () => {
-      if (socketRef.current) socketRef.current.close();
+      if (cleanupWs) cleanupWs();
+      if (socketRef.current) {
+        try {
+          socketRef.current.close();
+        } catch (e) {}
+        socketRef.current = null;
+      }
     };
   }, [fetchRequests, fetchReviews, connectWebSocket]);
 
