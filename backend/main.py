@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -87,10 +87,10 @@ class GalleryItemUpdate(BaseModel):
 
 
 class ServiceCreate(BaseModel):
-    title: str
+    name: str
     category: str
-    badge: str = "GENERAL"
-    description: str = ""
+    tag: Optional[str] = ""
+    description: Optional[str] = ""
 
 
 
@@ -523,10 +523,10 @@ async def get_services():
 @app.post("/services", status_code=status.HTTP_201_CREATED)
 async def create_service(service_data: ServiceCreate):
     payload = {
-        "title": service_data.title,
+        "name": service_data.name,
         "category": service_data.category,
-        "badge": service_data.badge,
-        "description": service_data.description
+        "tag": service_data.tag or "",
+        "description": service_data.description or ""
     }
 
     try:
