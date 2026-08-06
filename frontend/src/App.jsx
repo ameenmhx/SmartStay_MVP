@@ -1788,6 +1788,10 @@ function WaiterView() {
           playNotificationSound();
           const checkedOutRoom = parsed.room || parsed.room_number || parsed.data?.room;
           setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
+        } else if (parsed.event === 'NUDGE_WAITER' || parsed.type === 'nudge') {
+          playNotificationSound();
+          const roomNum = parsed.room_number || parsed.room || 'Guest';
+          triggerToast(`🚨 MANAGER REMINDER: Order for Room ${roomNum} is pending! Please attend immediately.`, 'warning');
         } else if (parsed.type === 'ping' || parsed.type === 'service_request' || parsed.type === 'new_request') {
           playNotificationSound();
         } else if (parsed.type === 'clear_completed') {
@@ -2218,7 +2222,55 @@ function ManagerView() {
       triggerToast('Audio alerts muted', 'info');
     }
   };
-  
+
+  const [remindingId, setRemindingId] = useState(null);
+
+  const handleRemindWaiter = async (req) => {
+    const reqId = req.id || req.room_number;
+    setRemindingId(reqId);
+    try {
+      const payload = {
+        request_id: req.id,
+        room_number: req.room_number,
+        item_name: req.item_requested || 'Service Request',
+      };
+
+      // Broadcast over active Manager WebSocket connection
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({
+          event: 'NUDGE_WAITER',
+          ...payload
+        }));
+      }
+
+      // Send to backend HTTP API endpoint
+      fetch(`${API_BASE_URL}/nudge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch((err) => console.error('Error triggering nudge API:', err));
+
+      triggerToast(`Reminder sent to Waiter for Room ${req.room_number}`, 'success');
+
+      setActivityLogs((prev) => [
+        {
+          id: Date.now() + Math.random(),
+          type: 'NUDGE',
+          timestamp: new Date().toLocaleTimeString(),
+          message: `Reminded waiter for Room ${req.room_number} (${payload.item_name})`,
+          room: req.room_number,
+          status: 'Reminded',
+        },
+        ...prev.slice(0, 49),
+      ]);
+    } catch (err) {
+      console.error('Failed to remind waiter:', err);
+      triggerToast(`Failed to send reminder for Room ${req.room_number}`, 'error');
+    } finally {
+      setTimeout(() => setRemindingId(null), 1000);
+    }
+  };
+
   // Single Mode State
   const [qrRoomNumber, setQrRoomNumber] = useState('101');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -3110,29 +3162,6 @@ function ManagerView() {
 
         <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
           <button
-            id="manager-audio-toggle-btn"
-            onClick={handleToggleAudio}
-            className={`p-2 px-4 rounded-lg border text-xs font-semibold flex items-center space-x-2 transition-all cursor-pointer shadow-stripe ${
-              audioAlertsEnabled
-                ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
-                : 'bg-brand-surface text-brand-body border-brand-border hover:bg-brand-surface/80'
-            }`}
-            title={audioAlertsEnabled ? 'Disable Audio Alerts' : 'Enable Audio Alerts'}
-          >
-            {audioAlertsEnabled ? (
-              <>
-                <Volume2 className="w-4 h-4 text-amber-600 animate-pulse" />
-                <span>Audio Enabled</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-4 h-4 text-gray-400" />
-                <span>Enable Audio</span>
-              </>
-            )}
-          </button>
-
-          <button
             id="manager-clear-completed-btn"
             onClick={handleClearCompleted}
             className="p-2 px-5 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 rounded-lg text-rose-700 transition-all text-xs font-semibold flex items-center space-x-2 shadow-stripe cursor-pointer animate-fade-in"
@@ -3582,8 +3611,24 @@ function ManagerView() {
                     </div>
                   </div>
 
-                  {/* Right side: Status Badge */}
+                  {/* Right side: Action Button & Status Badge */}
                   <div className="flex items-center space-x-3 self-end sm:self-center relative z-10">
+                    {isPending && (
+                      <button
+                        onClick={() => handleRemindWaiter(req)}
+                        disabled={remindingId === (req.id || req.room_number)}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-stripe ${
+                          isEmergency
+                            ? 'bg-white text-red-600 hover:bg-rose-50 border border-white'
+                            : 'bg-amber-500 hover:bg-amber-600 text-white border border-amber-600 active:scale-95'
+                        }`}
+                        title="Send urgent reminder notification to Waiter"
+                      >
+                        <BellRing className="w-3.5 h-3.5 animate-bounce" />
+                        <span>{remindingId === (req.id || req.room_number) ? 'Sending...' : 'Remind Waiter'}</span>
+                      </button>
+                    )}
+
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center space-x-1.5 ${
                         isEmergency

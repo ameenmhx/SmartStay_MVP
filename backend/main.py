@@ -272,6 +272,29 @@ async def delete_completed_requests():
     }
 
 
+class NudgePayload(BaseModel):
+    request_id: Optional[Any] = None
+    room_number: Any
+    item_name: Optional[str] = "Service Request"
+
+
+# POST /nudge - Broadcast NUDGE_WAITER reminder event to all connected waiters
+@app.post("/nudge")
+async def nudge_waiter(payload: NudgePayload):
+    broadcast_message = {
+        "event": "NUDGE_WAITER",
+        "request_id": payload.request_id,
+        "room_number": str(payload.room_number),
+        "item_name": payload.item_name or "Service Request",
+    }
+    await manager.broadcast(broadcast_message)
+    return {
+        "status": "success",
+        "message": f"Nudge sent to waiters for Room {payload.room_number}",
+        "data": broadcast_message
+    }
+
+
 # GET /requests - Fetch all active requests from Supabase
 @app.get("/requests")
 async def get_service_requests():
@@ -581,8 +604,13 @@ async def websocket_waiter_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Keep connection open and await incoming messages (if any)
-            await websocket.receive_text()
+            data_str = await websocket.receive_text()
+            try:
+                data = json.loads(data_str)
+                if data.get("event") == "NUDGE_WAITER":
+                    await manager.broadcast(data)
+            except Exception:
+                pass
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception:
