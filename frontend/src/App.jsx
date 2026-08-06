@@ -2194,7 +2194,6 @@ function ManagerView() {
   const [newServiceBadge, setNewServiceBadge] = useState('');
   const [newServiceDesc, setNewServiceDesc] = useState('');
   const [submittingService, setSubmittingService] = useState(false);
-  const [resettingServices, setResettingServices] = useState(false);
 
   // Fetch Services for Manager
   const fetchManagerServices = useCallback(async () => {
@@ -2274,28 +2273,6 @@ function ManagerView() {
     } catch (err) {
       console.error('Error deleting service:', err);
       triggerToast('Error deleting service', 'error');
-    }
-  };
-
-  const handleResetServices = async () => {
-    if (!window.confirm('Are you sure you want to reset all services back to default resort items? Custom services will be removed.')) return;
-
-    setResettingServices(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/services/reset`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        triggerToast('🔄 Services reset to resort defaults!', 'success');
-        fetchManagerServices();
-      } else {
-        triggerToast('Failed to reset services', 'error');
-      }
-    } catch (err) {
-      console.error('Error resetting services:', err);
-      triggerToast('Error resetting services', 'error');
-    } finally {
-      setResettingServices(false);
     }
   };
 
@@ -3635,8 +3612,6 @@ function ManagerView() {
           loadingServices={loadingManagerServices}
           onRefreshServices={fetchManagerServices}
           onDeleteService={handleDeleteService}
-          resettingServices={resettingServices}
-          handleResetServices={handleResetServices}
         />
       </div>
 

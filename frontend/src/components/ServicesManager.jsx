@@ -8,8 +8,6 @@ export default function ServicesManager({
   loadingServices = false,
   onRefreshServices = () => {},
   onDeleteService = () => {},
-  resettingServices = false,
-  handleResetServices = () => {},
 }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('In-Suite Dining & Bar');
@@ -83,18 +81,6 @@ export default function ServicesManager({
             <p className="text-xs text-brand-body mt-0.5">Manage and update active resort services offered on the Guest Portal</p>
           </div>
         </div>
-
-        {handleResetServices && (
-          <button
-            id="reset-services-btn"
-            disabled={resettingServices}
-            onClick={handleResetServices}
-            className="px-5 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-xl transition-all text-xs font-bold flex items-center space-x-2 shadow-sm cursor-pointer disabled:opacity-50 self-start sm:self-center"
-          >
-            <RefreshCw className={`w-4 h-4 text-red-600 ${resettingServices ? 'animate-spin' : ''}`} />
-            <span>{resettingServices ? 'Resetting...' : 'Reset to Default Services'}</span>
-          </button>
-        )}
       </div>
 
       {/* Form to Add New Service */}
