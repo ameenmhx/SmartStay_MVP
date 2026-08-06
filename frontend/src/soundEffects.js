@@ -164,18 +164,26 @@ const playChimePulse = async () => {
 /**
  * Play a repeating 5-second alarm sequence (pulsing double-beep chime pattern).
  * Clears any active overlapping alarm timeouts/intervals before starting.
+ * Guaranteed to stop automatically after exactly 5 seconds.
  */
-export const playNotificationSound = async () => {
+export const playNotificationSound = () => {
   if (!isAudioEnabledState) return;
 
-  // Clear existing active alarm timers to prevent distorted overlap
+  // Clear existing active alarm timers immediately
   stopNotificationSound();
 
-  // Play initial chime immediately
-  await playChimePulse();
+  const startTime = Date.now();
 
-  // Repeat chime pulse every 1 second (1000 ms) for 5 seconds total
+  // Trigger initial chime pulse immediately (non-blocking)
+  playChimePulse();
+
+  // Repeat chime pulse every 1 second (1000 ms)
   alarmIntervalId = setInterval(() => {
+    // Strict safety check: stop automatically if 4.8 seconds or more have elapsed
+    if (Date.now() - startTime >= 4800) {
+      stopNotificationSound();
+      return;
+    }
     playChimePulse();
   }, 1000);
 
