@@ -63,6 +63,7 @@ manager = ConnectionManager()
 class ServiceRequestCreate(BaseModel):
     room_number: str
     item_requested: str
+    category: Optional[str] = ""
 
 
 class ServiceRequestStatusUpdate(BaseModel):
