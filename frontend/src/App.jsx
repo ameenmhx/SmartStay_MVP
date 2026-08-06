@@ -507,7 +507,7 @@ function GuestView({ roomFromUrl }) {
   };
 
   const [dynamicServices, setDynamicServices] = useState([]);
-  const [_loadingServices, setLoadingServices] = useState(true);
+  const [loadingServices, setLoadingServices] = useState(true);
 
   const fetchGuestServices = useCallback(async () => {
     try {
@@ -569,26 +569,8 @@ function GuestView({ roomFromUrl }) {
       },
     ];
 
-    if (!dynamicServices || dynamicServices.length === 0) {
-      // Standard Fallback Items if dynamic fetch is loading or empty
-      categories[0].items = [
-        { id: 'Water', title: 'Bottled Mineral Water', desc: 'Ice-cold premium mineral water', icon: Droplets, badge: 'HYDRATION' },
-        { id: 'Tea', title: 'Artisan Hot Tea', desc: 'Selection of organic teas', icon: Coffee, badge: 'BEVERAGE' },
-        { id: 'Coffee', title: 'Fresh Espresso', desc: 'Double espresso or Americano', icon: Coffee, badge: 'BEVERAGE' },
-        { id: 'Food', title: 'Gourmet In-Room Meal', desc: 'Chef-crafted warm culinary dishes', icon: UtensilsCrossed, badge: 'FINE DINING' },
-      ];
-      categories[1].items = [
-        { id: 'Towels', title: 'Extra Plush Towels', desc: 'Set of Egyptian cotton bath towels', icon: Bath, badge: 'AMENITIES' },
-        { id: 'Turndown', title: 'Bed Turndown Service', desc: 'Evening turndown & luxury linen preparation', icon: Sparkles, badge: 'SERVICE' },
-        { id: 'Toiletries', title: 'Luxury Toiletries Set', desc: 'Premium bath products & essential toiletries', icon: Bath, badge: 'LUXURY' },
-      ];
-      categories[2].items = [
-        { id: 'Checkout', title: 'Late Checkout Request', desc: 'Extended suite departure request', icon: LogOut, badge: 'FRONT DESK' },
-        { id: 'Luggage', title: 'Luggage Assistance', desc: 'Porters for suite luggage transfer', icon: LogOut, badge: 'CONCIERGE' },
-        { id: 'Taxi', title: 'Taxi Booking', desc: 'Private chauffeur or airport taxi arrangement', icon: Car, badge: 'TRANSPORT' },
-      ];
-      return categories;
-    }
+    // No hardcoded fallback — only render live services from backend
+    // If dynamicServices is empty (still loading), the caller uses loadingServices to show a spinner
 
     dynamicServices.forEach((serv) => {
       const catStr = (serv.category || '').toLowerCase();
@@ -1066,7 +1048,12 @@ function GuestView({ roomFromUrl }) {
 
         {/* Categorized Request UI Grid */}
         <div className="space-y-10">
-          {serviceCategories
+          {loadingServices ? (
+            <div className="flex flex-col items-center justify-center py-16 space-y-4">
+              <RefreshCw className="w-8 h-8 animate-spin text-slate-400" />
+              <p className="text-sm text-slate-500 font-medium">Loading resort services...</p>
+            </div>
+          ) : serviceCategories
             .filter((cat) => activeCategoryTab === 'ALL' || activeCategoryTab === cat.id)
             .map((cat) => {
               const CatIcon = cat.icon;
@@ -2247,11 +2234,18 @@ function ManagerView() {
       });
 
       if (res.ok) {
+        const result = await res.json();
+        const newItem = result?.data || {
+          title: newServiceTitle.trim(),
+          category: newServiceCategory,
+          badge: newServiceBadge.trim() || 'LUXURY',
+          description: newServiceDesc.trim(),
+        };
         triggerToast('✨ New service added successfully!', 'success');
+        setManagerServices((prev) => [...prev, newItem]);
         setNewServiceTitle('');
         setNewServiceBadge('');
         setNewServiceDesc('');
-        fetchManagerServices();
       } else {
         triggerToast('Failed to add service', 'error');
       }
@@ -2272,7 +2266,7 @@ function ManagerView() {
       });
       if (res.ok) {
         triggerToast(`Deleted "${serviceTitle}" successfully`, 'success');
-        fetchManagerServices();
+        setManagerServices((prev) => prev.filter((s) => String(s.id || s.title) !== String(serviceId)));
       } else {
         triggerToast('Failed to delete service', 'error');
       }
