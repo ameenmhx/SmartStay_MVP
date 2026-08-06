@@ -2432,7 +2432,7 @@ function ManagerView() {
 
     // Render QR SVG HTML for each room using renderToStaticMarkup
     const itemsHtml = roomNames.map((roomName) => {
-      const targetUrl = `https://smartstaymhx.netlify.app/?room=${encodeURIComponent(roomName)}`;
+      const targetUrl = `${window.location.origin}/?room=${encodeURIComponent(roomName)}`;
       const svgMarkup = renderToStaticMarkup(
         <QRCodeSVG
           value={targetUrl}
@@ -3054,7 +3054,7 @@ function ManagerView() {
                   Encoded Guest Portal URL
                 </span>
                 <code className="text-xs text-brand-body font-mono break-all block">
-                  https://smartstaymhx.netlify.app/?room={encodeURIComponent(qrRoomNumber || '101')}
+                  {`${window.location.origin}/?room=${encodeURIComponent(qrRoomNumber || '101')}`}
                 </code>
               </div>
 
@@ -3086,7 +3086,7 @@ function ManagerView() {
               <div className="p-5 bg-white rounded-2xl shadow-stripe ring-4 ring-brand-primary/10 border border-brand-border">
                 <QRCodeSVG
                   id="qr-code-svg"
-                  value={`https://smartstaymhx.netlify.app/?room=${encodeURIComponent(qrRoomNumber || '101')}`}
+                  value={`${window.location.origin}/?room=${encodeURIComponent(qrRoomNumber || '101')}`}
                   size={160}
                   bgColor="#FFFFFF"
                   fgColor="#0F172A"
