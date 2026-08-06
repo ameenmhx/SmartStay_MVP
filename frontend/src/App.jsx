@@ -569,10 +569,9 @@ function GuestView({ roomFromUrl }) {
       },
     ];
 
-    // No hardcoded fallback — only render live services from backend
-    // If dynamicServices is empty (still loading), the caller uses loadingServices to show a spinner
-
-    dynamicServices.forEach((serv) => {
+    // Guard against null/undefined dynamicServices state
+    (dynamicServices || []).forEach((serv) => {
+      const servTitle = serv.title || '';
       const catStr = (serv.category || '').toLowerCase();
       let targetCat = categories.find((c) => c.title.toLowerCase() === catStr || c.id === catStr);
       if (!targetCat) {
@@ -587,10 +586,10 @@ function GuestView({ roomFromUrl }) {
 
       targetCat.items.push({
         id: serv.id,
-        title: serv.title,
+        title: servTitle,
         desc: serv.description || serv.desc || '',
         badge: serv.badge || serv.tag || 'SERVICE',
-        icon: getItemIcon(serv.title, serv.badge || serv.tag, serv.category),
+        icon: getItemIcon(servTitle, serv.badge || serv.tag, serv.category),
       });
     });
 
@@ -697,10 +696,11 @@ function GuestView({ roomFromUrl }) {
   };
 
   const dispatchOrder = async (itemName, isEmergency = false) => {
-    if (!itemName.trim()) return;
-    setLoadingItem(itemName);
+    const safeItemName = String(itemName ?? '').trim();
+    if (!safeItemName) return;
+    setLoadingItem(safeItemName);
 
-    const targetItemName = isEmergency ? 'EMERGENCY' : itemName;
+    const targetItemName = isEmergency ? 'EMERGENCY' : safeItemName;
 
     try {
       const response = await fetch(`${API_BASE_URL}/request`, {
@@ -732,10 +732,10 @@ function GuestView({ roomFromUrl }) {
       if (isEmergency) {
         triggerToast(`🚨 EMERGENCY SOS DISPATCHED for ${selectedRoom}! Resort staff notified instantly.`, 'error');
       } else {
-        triggerToast(`Request for "${itemName}" sent to resort staff!`, 'success');
+        triggerToast(`Request for "${safeItemName}" sent to resort staff!`, 'success');
       }
 
-      if (itemName === customItem) setCustomItem('');
+      if (safeItemName === customItem) setCustomItem('');
     } catch (err) {
       console.error('Request failed:', err);
       triggerToast(`Failed to send request: ${err.message}.`, 'error');
@@ -745,11 +745,12 @@ function GuestView({ roomFromUrl }) {
   };
 
   const handleOrder = (itemName, isEmergency = false) => {
-    if (!itemName.trim()) return;
+    const safeItemName = String(itemName ?? '').trim();
+    if (!safeItemName) return;
     if (isEmergency) {
-      dispatchOrder(itemName, isEmergency);
+      dispatchOrder(safeItemName, isEmergency);
     } else {
-      setItemToConfirm(itemName);
+      setItemToConfirm(safeItemName);
     }
   };
 
@@ -935,9 +936,10 @@ function GuestView({ roomFromUrl }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {timeContext.suggestions.map((item) => {
-              const ItemIcon = item.icon;
-              const isLoading = loadingItem === item.id;
+            {(timeContext.suggestions || []).map((item) => {
+              const ItemIcon = item.icon || Sparkles;
+              const itemTitle = item.title || item.id || '';
+              const isLoading = loadingItem === itemTitle;
               return (
                 <div
                   key={item.id}
@@ -948,14 +950,14 @@ function GuestView({ roomFromUrl }) {
                       <ItemIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className={`text-xs font-bold ${timeContext.suggestionTitle}`}>{item.title}</h4>
-                      <span className={`text-[10px] block mt-0.5 ${timeContext.suggestionMuted || 'text-slate-400'}`}>{item.desc}</span>
+                      <h4 className={`text-xs font-bold ${timeContext.suggestionTitle}`}>{itemTitle}</h4>
+                      <span className={`text-[10px] block mt-0.5 ${timeContext.suggestionMuted || 'text-slate-400'}`}>{item.desc || ''}</span>
                     </div>
                   </div>
                   <button
-                    id={`quick-suggest-btn-${item.id.toLowerCase().replace(/\s+/g, '-')}`}
+                    id={`quick-suggest-btn-${String(item.id).toLowerCase().replace(/\s+/g, '-')}`}
                     disabled={isLoading}
-                    onClick={() => handleOrder(item.id)}
+                    onClick={() => handleOrder(itemTitle)}
                     className={`px-3.5 py-2 rounded-xl text-[11px] font-semibold transition-all shrink-0 flex items-center gap-1 cursor-pointer border border-transparent disabled:opacity-50 ${timeContext.suggestionBtn}`}
                   >
                     {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <span>Request</span>}
@@ -1070,12 +1072,14 @@ function GuestView({ roomFromUrl }) {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {cat.items.map((item) => {
-                      const ItemIcon = item.icon;
-                      const isLoading = loadingItem === item.id;
+                    {(cat.items || []).map((item) => {
+                      const ItemIcon = item.icon || Sparkles;
+                      const itemTitle = item.title || '';
+                      const isLoading = loadingItem === itemTitle;
+                      const safeId = String(item.id ?? itemTitle).toLowerCase().replace(/[^a-z0-9-]/g, '-');
                       return (
                         <div
-                          key={item.id}
+                          key={item.id ?? itemTitle}
                           className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-5 hover:border-slate-200/80 hover:shadow-md transition-all duration-300 group"
                         >
                           <div className="flex items-start justify-between">
@@ -1083,19 +1087,19 @@ function GuestView({ roomFromUrl }) {
                               <ItemIcon className="w-5 h-5" />
                             </div>
                             <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase mt-1">
-                              {item.badge}
+                              {item.badge || 'SERVICE'}
                             </span>
                           </div>
 
                           <div>
-                            <h3 className="font-bold text-sm text-slate-800">{item.title}</h3>
-                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{item.desc}</p>
+                            <h3 className="font-bold text-sm text-slate-800">{itemTitle}</h3>
+                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{item.desc || ''}</p>
                           </div>
 
                           <button
-                            id={`request-btn-${item.id.toLowerCase().replace(/\s+/g, '-')}`}
+                            id={`request-btn-${safeId}`}
                             disabled={isLoading}
-                            onClick={() => handleOrder(item.id)}
+                            onClick={() => handleOrder(itemTitle)}
                             className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer border border-transparent disabled:opacity-50"
                           >
                             {isLoading ? (
@@ -3733,7 +3737,7 @@ function ManagerView() {
         <div className="space-y-8 pt-4">
           <div className="flex items-center justify-between border-b border-brand-border pb-3">
             <h3 className="text-lg text-brand-heading font-semibold tracking-tight">Active Resort Services Grid</h3>
-            <span className="text-xs text-brand-body font-mono">Total Services: {managerServices.length}</span>
+            <span className="text-xs text-brand-body font-mono">Total Services: {(managerServices || []).length}</span>
           </div>
 
           {loadingManagerServices ? (
@@ -3743,7 +3747,7 @@ function ManagerView() {
             </div>
           ) : (
             ['In-Suite Dining & Bar', 'Housekeeping & Comfort', 'Concierge & Guest Experience'].map((categoryName) => {
-              const categoryItems = managerServices.filter(
+              const categoryItems = (managerServices || []).filter(
                 (s) => s.category === categoryName || (s.category || '').toLowerCase().includes(categoryName.split(' ')[0].toLowerCase())
               );
 
