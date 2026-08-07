@@ -51,6 +51,11 @@ import {
   Trash2,
   Volume2,
   VolumeX,
+  Users,
+  UserPlus,
+  Shield,
+  UserCheck,
+  Briefcase,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
@@ -132,43 +137,120 @@ const triggerToast = (msg, type = 'success') => {
 };
 
 export default function App() {
-  const [activeView, setActiveView] = useState('guest'); // 'guest' | 'waiter' | 'manager'
+  const [activeView, setActiveView] = useState(() => {
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes('/login')) return 'login';
+    if (path.includes('/waiter')) return 'waiter';
+    if (path.includes('/manager')) return 'manager';
+    return 'guest';
+  });
+
   const [roomFromUrl, setRoomFromUrl] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('room') || '';
   });
-  const [session, setSession] = useState(null);
-  const [_loadingAuth, setLoadingAuth] = useState(true);
+
+  // Basic staff authentication state backed by localStorage
+  const [staffUser, setStaffUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smartstay_staff_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     const handleUrlChange = () => {
       const params = new URLSearchParams(window.location.search);
       setRoomFromUrl(params.get('room') || '');
+      const path = window.location.pathname.toLowerCase();
+      if (path.includes('/login')) {
+        setActiveView('login');
+      } else if (path.includes('/waiter')) {
+        const stored = localStorage.getItem('smartstay_staff_user');
+        if (!stored) {
+          setActiveView('login');
+        } else {
+          setActiveView('waiter');
+        }
+      } else if (path.includes('/manager')) {
+        const stored = localStorage.getItem('smartstay_staff_user');
+        const user = stored ? JSON.parse(stored) : null;
+        if (!user) {
+          setActiveView('login');
+        } else if (user.role !== 'MANAGER') {
+          setActiveView('waiter');
+        } else {
+          setActiveView('manager');
+        }
+      }
     };
     window.addEventListener('popstate', handleUrlChange);
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, []);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoadingAuth(false);
-    });
+  // Protected navigation handler with role checks
+  const navigateToView = (targetView) => {
+    if (targetView === 'guest') {
+      window.history.pushState(null, '', '/');
+      setActiveView('guest');
+    } else if (targetView === 'waiter') {
+      if (!staffUser) {
+        triggerToast('Please sign in to access the Waiter Dashboard', 'warning');
+        window.history.pushState(null, '', '/login');
+        setActiveView('login');
+      } else {
+        window.history.pushState(null, '', '/waiter');
+        setActiveView('waiter');
+      }
+    } else if (targetView === 'manager') {
+      if (!staffUser) {
+        triggerToast('Please sign in to access the Manager Dashboard', 'warning');
+        window.history.pushState(null, '', '/login');
+        setActiveView('login');
+      } else if (staffUser.role !== 'MANAGER') {
+        triggerToast('Manager access required. Redirecting to Waiter Dashboard.', 'warning');
+        window.history.pushState(null, '', '/waiter');
+        setActiveView('waiter');
+      } else {
+        window.history.pushState(null, '', '/manager');
+        setActiveView('manager');
+      }
+    } else if (targetView === 'login') {
+      window.history.pushState(null, '', '/login');
+      setActiveView('login');
+    }
+  };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setLoadingAuth(false);
-    });
+  const handleLoginSuccess = (user) => {
+    setStaffUser(user);
+    try {
+      localStorage.setItem('smartstay_staff_user', JSON.stringify(user));
+    } catch (e) {
+      console.error('Error saving staff user to localStorage:', e);
+    }
+    triggerToast(`Welcome, ${user.name || 'Staff Member'}! Logged in as ${user.role}`, 'success');
 
-    return () => subscription.unsubscribe();
-  }, []);
+    if (user.role === 'MANAGER') {
+      window.history.pushState(null, '', '/manager');
+      setActiveView('manager');
+    } else {
+      window.history.pushState(null, '', '/waiter');
+      setActiveView('waiter');
+    }
+  };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setActiveView('guest');
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('smartstay_staff_user');
+    } catch (e) {
+      console.error('Error clearing staff user from localStorage:', e);
+    }
+    setStaffUser(null);
+    triggerToast('Logged out of staff session', 'info');
+    window.history.pushState(null, '', '/login');
+    setActiveView('login');
   };
 
   return (
@@ -199,7 +281,7 @@ export default function App() {
             <div className="flex items-center p-1 bg-brand-surface rounded-xl border border-brand-border overflow-x-auto">
               <button
                 id="nav-guest-view-btn"
-                onClick={() => setActiveView('guest')}
+                onClick={() => navigateToView('guest')}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeView === 'guest'
                     ? 'bg-brand-primary text-white shadow-stripe'
@@ -211,7 +293,7 @@ export default function App() {
               </button>
               <button
                 id="nav-waiter-view-btn"
-                onClick={() => setActiveView('waiter')}
+                onClick={() => navigateToView('waiter')}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeView === 'waiter'
                     ? 'bg-brand-primary text-white shadow-stripe'
@@ -223,7 +305,7 @@ export default function App() {
               </button>
               <button
                 id="nav-manager-view-btn"
-                onClick={() => setActiveView('manager')}
+                onClick={() => navigateToView('manager')}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
                   activeView === 'manager'
                     ? 'bg-brand-primary text-white shadow-stripe'
@@ -235,16 +317,37 @@ export default function App() {
               </button>
             </div>
 
-            {/* Logout Button - Rendered ONLY if user is logged in */}
-            {session && (
+            {/* Auth Session / Logout Indicator */}
+            {staffUser ? (
+              <div className="flex items-center space-x-2">
+                <div className="hidden sm:flex flex-col text-right">
+                  <span className="text-xs font-bold text-brand-heading">{staffUser.name}</span>
+                  <span className="text-[10px] font-extrabold uppercase text-brand-primary tracking-wider">
+                    {staffUser.role}
+                  </span>
+                </div>
+                <button
+                  id="nav-logout-btn"
+                  onClick={handleLogout}
+                  className="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-all duration-200 shrink-0 cursor-pointer"
+                  title={`Logged in as ${staffUser.email} (${staffUser.role})`}
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              </div>
+            ) : (
               <button
-                id="nav-logout-btn"
-                onClick={handleLogout}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-all duration-200 shrink-0 cursor-pointer"
-                title={`Logged in as ${session.user?.email || 'Staff'}`}
+                id="nav-login-btn"
+                onClick={() => navigateToView('login')}
+                className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
+                  activeView === 'login'
+                    ? 'bg-brand-primary text-white shadow-stripe'
+                    : 'bg-brand-surface hover:bg-brand-card text-brand-heading border border-brand-border'
+                }`}
               >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <Shield className="w-4 h-4 text-brand-primary" />
+                <span>Staff Login</span>
               </button>
             )}
           </div>
@@ -255,12 +358,11 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 lg:p-10 pb-28">
         {activeView === 'guest' ? (
           <GuestView roomFromUrl={roomFromUrl} />
-        ) : !session ? (
+        ) : activeView === 'login' || !staffUser ? (
           <Login
             targetView={activeView}
-            onSuccess={(newSession) => {
-              setSession(newSession);
-            }}
+            onSuccess={handleLoginSuccess}
+            apiBaseUrl={API_BASE_URL}
           />
         ) : activeView === 'waiter' ? (
           <WaiterView />
@@ -2397,7 +2499,95 @@ function ManagerView() {
   const reviewsRef = useRef(null);
   const galleryManageRef = useRef(null);
   const servicesManageRef = useRef(null);
+  const staffManageRef = useRef(null);
   const [activeNavTab, setActiveNavTab] = useState('analytics');
+
+  // Staff Management CMS State for Manager
+  const [staffList, setStaffList] = useState([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffEmail, setNewStaffEmail] = useState('');
+  const [newStaffPassword, setNewStaffPassword] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState('WAITER');
+  const [submittingStaff, setSubmittingStaff] = useState(false);
+
+  const fetchStaff = useCallback(async () => {
+    try {
+      setLoadingStaff(true);
+      const res = await fetch(`${API_BASE_URL}/staff`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result && Array.isArray(result.data)) {
+          setStaffList(result.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching staff list:', err);
+    } finally {
+      setLoadingStaff(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStaff();
+  }, [fetchStaff]);
+
+  const handleAddStaff = async (e) => {
+    e.preventDefault();
+    if (!newStaffName.trim() || !newStaffEmail.trim() || !newStaffPassword.trim()) {
+      triggerToast('Please fill in all staff fields (Name, Email, Password)', 'warning');
+      return;
+    }
+    setSubmittingStaff(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/staff`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newStaffName.trim(),
+          email: newStaffEmail.trim(),
+          password: newStaffPassword.trim(),
+          role: newStaffRole,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        triggerToast(`Staff member "${newStaffName}" (${newStaffRole}) created!`, 'success');
+        setNewStaffName('');
+        setNewStaffEmail('');
+        setNewStaffPassword('');
+        setNewStaffRole('WAITER');
+        fetchStaff();
+      } else {
+        triggerToast(data.detail || 'Failed to add staff member', 'error');
+      }
+    } catch (err) {
+      console.error('Error adding staff member:', err);
+      triggerToast('Failed to add staff member', 'error');
+    } finally {
+      setSubmittingStaff(false);
+    }
+  };
+
+  const handleDeleteStaff = async (id, staffName) => {
+    if (!window.confirm(`Are you sure you want to delete staff member "${staffName}"?`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/staff/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        triggerToast(`Staff member "${staffName}" deleted`, 'success');
+        setStaffList((prev) => prev.filter((item) => String(item.id) !== String(id)));
+      } else {
+        triggerToast('Failed to delete staff member', 'error');
+      }
+    } catch (err) {
+      console.error('Error deleting staff member:', err);
+      triggerToast('Failed to delete staff member', 'error');
+    }
+  };
 
   // Manage Gallery Form States
   const [galleryTitle, setGalleryTitle] = useState('');
@@ -4138,7 +4328,182 @@ function ManagerView() {
 
       </div>
 
-      {/* Fixed Bottom Navigation Bar - Flush to absolute bottom with premium glassmorphism */}
+      {/* ==========================================================================
+         STAFF MANAGEMENT CMS SECTION
+         ========================================================================== */}
+      <div ref={staffManageRef} className="scroll-mt-24 bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl shadow-stripe space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-6">
+          <div>
+            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-brand-primary mb-1">
+              <Users className="w-4 h-4" />
+              <span>Staff Management CMS</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-brand-heading">
+              Team Access Control &amp; Staff Roles
+            </h2>
+            <p className="text-xs text-brand-body mt-1">
+              Manage hotel staff accounts, assign operational roles (Manager / Waiter), and revoke access
+            </p>
+          </div>
+          <button
+            id="refresh-staff-btn"
+            onClick={fetchStaff}
+            disabled={loadingStaff}
+            className="p-2 px-4 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-lg text-brand-heading transition-all text-xs font-semibold flex items-center space-x-2 cursor-pointer self-start sm:self-center shadow-stripe"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-brand-primary ${loadingStaff ? 'animate-spin' : ''}`} />
+            <span>Refresh Staff Directory</span>
+          </button>
+        </div>
+
+        {/* Form to Add New Staff Member */}
+        <form onSubmit={handleAddStaff} className="bg-brand-surface border border-brand-border p-6 rounded-xl space-y-5">
+          <h3 className="text-sm font-bold text-brand-heading flex items-center space-x-2">
+            <UserPlus className="w-4 h-4 text-brand-primary" />
+            <span>Add New Staff Member</span>
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-body mb-1">
+                Full Name
+              </label>
+              <input
+                id="add-staff-name-input"
+                type="text"
+                required
+                placeholder="e.g. John Doe"
+                value={newStaffName}
+                onChange={(e) => setNewStaffName(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-white border border-brand-border rounded-xl text-xs text-brand-heading focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-body mb-1">
+                Email Address
+              </label>
+              <input
+                id="add-staff-email-input"
+                type="email"
+                required
+                placeholder="e.g. john@smartstay.com"
+                value={newStaffEmail}
+                onChange={(e) => setNewStaffEmail(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-white border border-brand-border rounded-xl text-xs text-brand-heading focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-body mb-1">
+                Password
+              </label>
+              <input
+                id="add-staff-password-input"
+                type="password"
+                required
+                placeholder="••••••••"
+                value={newStaffPassword}
+                onChange={(e) => setNewStaffPassword(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-white border border-brand-border rounded-xl text-xs text-brand-heading focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-body mb-1">
+                Role (Manager / Waiter)
+              </label>
+              <select
+                id="add-staff-role-select"
+                value={newStaffRole}
+                onChange={(e) => setNewStaffRole(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-white border border-brand-border rounded-xl text-xs text-brand-heading focus:outline-none focus:ring-2 focus:ring-brand-primary/20 font-semibold cursor-pointer"
+              >
+                <option value="WAITER">Waiter (Staff)</option>
+                <option value="MANAGER">Manager (Admin)</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button
+              id="add-staff-submit-btn"
+              type="submit"
+              disabled={submittingStaff}
+              className="px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shadow-stripe disabled:opacity-50 cursor-pointer"
+            >
+              {submittingStaff ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving Staff Member...</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Create Staff Account</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        {/* Current Staff Members Grid Directory */}
+        <div>
+          <h3 className="text-sm font-bold text-brand-heading mb-4 flex items-center space-x-2">
+            <ShieldCheck className="w-4 h-4 text-brand-primary" />
+            <span>Active Staff Members Directory ({staffList.length})</span>
+          </h3>
+          {staffList.length === 0 ? (
+            <div className="p-8 text-center bg-brand-surface rounded-xl border border-brand-border text-xs text-brand-body">
+              No staff members found. Add staff members using the form above.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {staffList.map((member) => {
+                const isManager = (member.role || '').toUpperCase() === 'MANAGER';
+                return (
+                  <div
+                    key={member.id}
+                    className="bg-white border border-brand-border p-5 rounded-xl flex items-center justify-between shadow-stripe hover:border-brand-primary/20 transition-all"
+                  >
+                    <div className="flex items-center space-x-3.5">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm border ${
+                          isManager
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}
+                      >
+                        {isManager ? <Briefcase className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-brand-heading leading-tight">{member.name}</h4>
+                        <p className="text-xs text-brand-body font-mono mt-0.5">{member.email}</p>
+                        <span
+                          className={`inline-block mt-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase border ${
+                            isManager
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}
+                        >
+                          {member.role || 'STAFF'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      id={`delete-staff-btn-${member.id}`}
+                      type="button"
+                      onClick={() => handleDeleteStaff(member.id, member.name)}
+                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-200 cursor-pointer"
+                      title={`Delete Staff ${member.name}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Fixed Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/70 backdrop-blur-xl border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
         <button
           onClick={() => scrollToSection(liveFeedRef, 'feed')}
@@ -4159,6 +4524,15 @@ function ManagerView() {
           <span className="text-[10px] tracking-wide font-sans">Analytics</span>
         </button>
         <button
+          onClick={() => scrollToSection(staffManageRef, 'staff')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'staff' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Users className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">Staff CMS</span>
+        </button>
+        <button
           onClick={() => scrollToSection(qrGeneratorRef, 'qr')}
           className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
             activeNavTab === 'qr' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
@@ -4174,7 +4548,7 @@ function ManagerView() {
           }`}
         >
           <ClipboardList className="w-5 h-5" />
-          <span className="text-[10px] tracking-wide font-sans">Services Manager</span>
+          <span className="text-[10px] tracking-wide font-sans">Services</span>
         </button>
         <button
           onClick={() => scrollToSection(reviewsRef, 'reviews')}

@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, status
@@ -101,6 +102,39 @@ class ServiceUpdate(BaseModel):
     tag: Optional[str] = None
     description: Optional[str] = None
     is_quick_service: Optional[bool] = None
+
+
+# Staff Management Pydantic Schemas
+class StaffCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str  # 'MANAGER' or 'WAITER'
+
+
+class StaffLogin(BaseModel):
+    email: str
+    password: str
+
+
+# Default staff seed data fallback
+DEFAULT_STAFF_MEMBERS: List[Dict[str, Any]] = [
+    {
+        "id": "1",
+        "name": "Resort General Manager",
+        "email": "manager@smartstay.com",
+        "password": "manager123",
+        "role": "MANAGER"
+    },
+    {
+        "id": "2",
+        "name": "Head Waiter - Lead",
+        "email": "waiter@smartstay.com",
+        "password": "waiter123",
+        "role": "WAITER"
+    }
+]
+in_memory_staff_store: List[Dict[str, Any]] = list(DEFAULT_STAFF_MEMBERS)
 
 
 
@@ -655,6 +689,150 @@ async def delete_service(service_id: str):
         "message": f"Successfully deleted service {service_id}",
         "service_id": service_id,
         "deleted_records": response.data or []
+    }
+
+
+# ==============================================================================
+# STAFF MANAGEMENT & RBAC ENDPOINTS
+# ==============================================================================
+
+# GET /staff - List all staff members
+@app.get("/staff")
+async def get_staff_members():
+    try:
+        response = supabase.table("staff").select("*").execute()
+        if response.data and len(response.data) > 0:
+            return {
+                "status": "success",
+                "count": len(response.data),
+                "data": response.data
+            }
+    except Exception as e:
+        print(f"Supabase staff query error/fallback: {e}")
+
+    # Fallback to in-memory store if table doesn't exist yet in Supabase
+    return {
+        "status": "success",
+        "count": len(in_memory_staff_store),
+        "data": in_memory_staff_store
+    }
+
+
+# POST /staff - Create a new staff member
+@app.post("/staff", status_code=status.HTTP_201_CREATED)
+async def create_staff_member(staff_data: StaffCreate):
+    clean_email = staff_data.email.lower().strip()
+    formatted_role = staff_data.role.upper().strip()
+    if formatted_role not in ["MANAGER", "WAITER"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid role. Role must be 'MANAGER' or 'WAITER'."
+        )
+
+    payload = {
+        "name": staff_data.name.strip(),
+        "email": clean_email,
+        "password": staff_data.password,
+        "role": formatted_role
+    }
+
+    # Try inserting into Supabase
+    try:
+        response = supabase.table("staff").insert(payload).execute()
+        if response.data and len(response.data) > 0:
+            inserted_record = response.data[0]
+            # Also keep in-memory store in sync
+            in_memory_staff_store.append(inserted_record)
+            return {
+                "message": "Staff member created successfully",
+                "data": inserted_record
+            }
+    except Exception as e:
+        print(f"Supabase staff insert error/fallback: {e}")
+
+    # Fallback in-memory insertion if Supabase table not created yet
+    # Check for existing email in memory
+    for member in in_memory_staff_store:
+        if member.get("email", "").lower() == clean_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A staff member with this email already exists."
+            )
+
+    new_record = {
+        "id": str(uuid.uuid4()),
+        **payload
+    }
+    in_memory_staff_store.append(new_record)
+    return {
+        "message": "Staff member created successfully",
+        "data": new_record
+    }
+
+
+# DELETE /staff/{id} - Delete a staff member by ID
+@app.delete("/staff/{id}")
+async def delete_staff_member(id: str):
+    deleted_records = []
+    try:
+        formatted_id = int(id) if id.isdigit() else id
+        response = supabase.table("staff").delete().eq("id", formatted_id).execute()
+        if response.data:
+            deleted_records = response.data
+    except Exception as e:
+        print(f"Supabase staff delete error/fallback: {e}")
+
+    # Remove from in-memory fallback store as well
+    global in_memory_staff_store
+    in_memory_staff_store = [m for m in in_memory_staff_store if str(m.get("id")) != str(id)]
+
+    return {
+        "message": f"Successfully deleted staff member {id}",
+        "id": id,
+        "deleted_records": deleted_records
+    }
+
+
+# POST /login - Staff login endpoint validating email & password
+@app.post("/login")
+async def staff_login(login_data: StaffLogin):
+    clean_email = login_data.email.lower().strip()
+    provided_password = login_data.password.strip()
+
+    user = None
+
+    # Try querying Supabase staff table
+    try:
+        response = supabase.table("staff").select("*").eq("email", clean_email).execute()
+        if response.data and len(response.data) > 0:
+            user = response.data[0]
+    except Exception as e:
+        print(f"Supabase login query error/fallback: {e}")
+
+    # Fallback to in-memory store if Supabase doesn't return user
+    if not user:
+        for member in in_memory_staff_store:
+            if member.get("email", "").lower() == clean_email:
+                user = member
+                break
+
+    if not user or user.get("password") != provided_password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
+    # Return authenticated user object (omit raw password for security)
+    user_response = {
+        "id": str(user.get("id")),
+        "name": user.get("name"),
+        "email": user.get("email"),
+        "role": user.get("role")
+    }
+
+    return {
+        "message": "Login successful",
+        "user": user_response
     }
 
 

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
 import {
   Lock,
   Mail,
@@ -9,17 +8,25 @@ import {
   RefreshCw,
   Sparkles,
   CheckCircle2,
+  UserCheck,
+  Briefcase,
 } from 'lucide-react';
 
-export default function Login({ targetView, onSuccess }) {
+const API_BASE_URL = 'https://smartstay-backend-3wbb.onrender.com';
+
+export default function Login({ targetView, onSuccess, apiBaseUrl = API_BASE_URL }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState(null);
 
-  const viewName = targetView === 'manager' ? 'Manager Dashboard' : 'Waiter Dashboard';
+  const viewName =
+    targetView === 'manager'
+      ? 'Manager Dashboard'
+      : targetView === 'waiter'
+      ? 'Waiter Dashboard'
+      : 'Staff Portal';
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -33,31 +40,26 @@ export default function Login({ targetView, onSuccess }) {
     setMessage(null);
 
     try {
-      if (isSignUp) {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
+      // Send login request to Backend POST /login endpoint
+      const response = await fetch(`${apiBaseUrl}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password: password.trim() }),
+      });
 
-        if (signUpError) throw signUpError;
+      const data = await response.json();
 
-        if (data?.user?.identities?.length === 0) {
-          setError('An account with this email already exists. Please sign in instead.');
-        } else {
-          setMessage('Account created! If email confirmation is enabled, check your inbox. Otherwise, you can log in now.');
-          setIsSignUp(false);
+      if (!response.ok) {
+        throw new Error(data.detail || 'Invalid email or password. Please check your credentials.');
+      }
+
+      if (data && data.user) {
+        setMessage(`Welcome back, ${data.user.name || 'Staff Member'}! Redirecting...`);
+        if (onSuccess) {
+          onSuccess(data.user);
         }
       } else {
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (signInError) throw signInError;
-
-        if (data?.session && onSuccess) {
-          onSuccess(data.session);
-        }
+        throw new Error('Unexpected response format from authentication server.');
       }
     } catch (err) {
       setError(err.message || 'Authentication failed. Please check your credentials.');
@@ -66,9 +68,16 @@ export default function Login({ targetView, onSuccess }) {
     }
   };
 
+  const handleDemoFill = (demoEmail, demoPassword) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setError(null);
+    setMessage(null);
+  };
+
   return (
     <div className="min-h-[75vh] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-lg w-full space-y-10 bg-brand-card border border-brand-border p-10 sm:p-12 rounded-2xl shadow-stripe relative overflow-hidden">
+      <div className="max-w-lg w-full space-y-8 bg-brand-card border border-brand-border p-8 sm:p-12 rounded-2xl shadow-stripe relative overflow-hidden">
         {/* Header */}
         <div className="text-center relative z-10">
           <div className="mx-auto w-14 h-14 rounded-xl bg-brand-primary flex items-center justify-center shadow-stripe mb-5">
@@ -76,15 +85,13 @@ export default function Login({ targetView, onSuccess }) {
           </div>
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-surface border border-brand-border text-brand-body text-xs font-semibold tracking-wide mb-3">
             <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
-            <span>Staff Portal Security</span>
+            <span>Staff Portal Authentication</span>
           </div>
           <h2 className="text-2xl sm:text-3xl text-brand-heading font-semibold tracking-tight leading-tight">
-            {isSignUp ? 'Create Staff Account' : `Access ${viewName}`}
+            Sign In to Staff Portal
           </h2>
           <p className="mt-3 text-sm text-brand-body max-w-sm mx-auto leading-relaxed">
-            {isSignUp
-              ? 'Register new staff credentials to manage luxury hotel operations.'
-              : `Sign in with your verified credentials to access the ${viewName.toLowerCase()}.`}
+            Enter your credentials to access the {viewName}.
           </p>
         </div>
 
@@ -105,7 +112,7 @@ export default function Login({ targetView, onSuccess }) {
         )}
 
         {/* Auth Form */}
-        <form className="mt-8 space-y-6 relative z-10" onSubmit={handleAuth}>
+        <form className="mt-6 space-y-6 relative z-10" onSubmit={handleAuth}>
           <div className="space-y-5">
             {/* Email Field */}
             <div>
@@ -160,37 +167,42 @@ export default function Login({ targetView, onSuccess }) {
             {loading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                <span>Authenticating...</span>
+                <span>Authenticating Staff Member...</span>
               </>
             ) : (
               <>
-                <span>{isSignUp ? 'Create Account' : `Sign In to ${viewName}`}</span>
+                <span>Sign In to {viewName}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        {/* Toggle between Sign In & Sign Up */}
-        <div className="pt-6 border-t border-brand-border text-center relative z-10 flex flex-col space-y-4">
-          <p className="text-xs text-brand-body">
-            {isSignUp ? 'Already have a staff account?' : "Don't have an account yet?"}{' '}
+        {/* Demo Credentials Quick Fill Buttons */}
+        <div className="pt-6 border-t border-brand-border relative z-10 space-y-3">
+          <p className="text-xs font-semibold text-brand-heading text-center">Quick Demo Credentials:</p>
+          <div className="grid grid-cols-2 gap-3">
             <button
-              id="toggle-auth-mode-btn"
+              id="demo-login-manager-btn"
               type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-                setMessage(null);
-              }}
-              className="text-brand-primary hover:text-brand-primary/80 font-semibold underline underline-offset-4 transition-colors cursor-pointer"
+              onClick={() => handleDemoFill('manager@smartstay.com', 'manager123')}
+              className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
             >
-              {isSignUp ? 'Sign In' : 'Sign Up for Staff Access'}
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>Fill Manager</span>
             </button>
-          </p>
-
+            <button
+              id="demo-login-waiter-btn"
+              type="button"
+              onClick={() => handleDemoFill('waiter@smartstay.com', 'waiter123')}
+              className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>Fill Waiter</span>
+            </button>
+          </div>
           <div className="p-3.5 rounded-xl bg-brand-surface border border-brand-border text-left text-[11px] text-brand-body">
-            <span className="font-semibold text-brand-primary">Note:</span> Guest Portal remains 100% public and does not require authentication. Staff authentication protects Waiter and Manager operations.
+            <span className="font-semibold text-brand-primary">Note:</span> Guest Portal remains 100% public and does not require authentication. Staff login grants role-based access to Waiter and Manager operations.
           </div>
         </div>
       </div>
