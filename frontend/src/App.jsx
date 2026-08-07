@@ -149,12 +149,13 @@ export default function App() {
 
   const currentUser = staffUser || (() => {
     try {
-      const saved = localStorage.getItem('smartstay_staff_user') || localStorage.getItem('user');
-      return saved ? JSON.parse(saved) : {};
+      const saved = localStorage.getItem('user') || localStorage.getItem('smartstay_staff_user');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return parsed && typeof parsed === 'object' ? parsed : { email: '' };
     } catch {
-      return {};
+      return { email: '' };
     }
-  })();
+  })() || { email: '' };
 
   const [activeView, setActiveView] = useState(() => {
     const path = window.location.pathname.toLowerCase();
@@ -2584,12 +2585,21 @@ function ManagerView() {
   };
 
   const handleDeleteStaff = async (id, staffName) => {
+    const activeUser =
+      currentUser ||
+      (() => {
+        try {
+          return JSON.parse(localStorage.getItem('user') || localStorage.getItem('smartstay_staff_user') || '{}');
+        } catch {
+          return { email: '' };
+        }
+      })();
     if (
-      currentUser &&
-      ((currentUser.id && String(currentUser.id) === String(id)) ||
-        (currentUser.email &&
+      activeUser &&
+      ((activeUser.id && String(activeUser.id) === String(id)) ||
+        (activeUser.email &&
           staffList.find((s) => String(s.id) === String(id))?.email?.toLowerCase() ===
-            currentUser.email.toLowerCase()))
+            activeUser.email.toLowerCase()))
     ) {
       triggerToast('You cannot delete your own account', 'error');
       return;
@@ -4480,12 +4490,21 @@ function ManagerView() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {staffList.map((member) => {
                 const isManager = (member.role || '').toUpperCase() === 'MANAGER';
+                const activeUser =
+                  currentUser ||
+                  (() => {
+                    try {
+                      return JSON.parse(localStorage.getItem('user') || localStorage.getItem('smartstay_staff_user') || '{}');
+                    } catch {
+                      return { email: '' };
+                    }
+                  })();
                 const isSelf =
-                  currentUser &&
-                  ((currentUser.id && String(currentUser.id) === String(member.id)) ||
-                    (currentUser.email &&
+                  activeUser &&
+                  ((activeUser.id && String(activeUser.id) === String(member.id)) ||
+                    (activeUser.email &&
                       member.email &&
-                      member.email.toLowerCase() === currentUser.email.toLowerCase()));
+                      member.email.toLowerCase() === activeUser.email.toLowerCase()));
                 return (
                   <div
                     key={member.id}
