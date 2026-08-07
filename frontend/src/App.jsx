@@ -140,12 +140,21 @@ export default function App() {
   // Basic staff authentication state backed by localStorage
   const [staffUser, setStaffUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('smartstay_staff_user');
+      const saved = localStorage.getItem('smartstay_staff_user') || localStorage.getItem('user');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
   });
+
+  const currentUser = staffUser || (() => {
+    try {
+      const saved = localStorage.getItem('smartstay_staff_user') || localStorage.getItem('user');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  })();
 
   const [activeView, setActiveView] = useState(() => {
     const path = window.location.pathname.toLowerCase();
@@ -2576,11 +2585,11 @@ function ManagerView() {
 
   const handleDeleteStaff = async (id, staffName) => {
     if (
-      staffUser &&
-      ((staffUser.id && String(staffUser.id) === String(id)) ||
-        (staffUser.email &&
+      currentUser &&
+      ((currentUser.id && String(currentUser.id) === String(id)) ||
+        (currentUser.email &&
           staffList.find((s) => String(s.id) === String(id))?.email?.toLowerCase() ===
-            staffUser.email.toLowerCase()))
+            currentUser.email.toLowerCase()))
     ) {
       triggerToast('You cannot delete your own account', 'error');
       return;
@@ -4472,11 +4481,11 @@ function ManagerView() {
               {staffList.map((member) => {
                 const isManager = (member.role || '').toUpperCase() === 'MANAGER';
                 const isSelf =
-                  staffUser &&
-                  ((staffUser.id && String(staffUser.id) === String(member.id)) ||
-                    (staffUser.email &&
+                  currentUser &&
+                  ((currentUser.id && String(currentUser.id) === String(member.id)) ||
+                    (currentUser.email &&
                       member.email &&
-                      member.email.toLowerCase() === staffUser.email.toLowerCase()));
+                      member.email.toLowerCase() === currentUser.email.toLowerCase()));
                 return (
                   <div
                     key={member.id}
