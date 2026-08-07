@@ -151,11 +151,11 @@ export default function App() {
     try {
       const saved = localStorage.getItem('user') || localStorage.getItem('smartstay_staff_user');
       const parsed = saved ? JSON.parse(saved) : null;
-      return parsed && typeof parsed === 'object' ? parsed : { email: '' };
+      return parsed && typeof parsed === 'object' ? parsed : {};
     } catch {
-      return { email: '' };
+      return {};
     }
-  })() || { email: '' };
+  })();
 
   const [activeView, setActiveView] = useState(() => {
     const path = window.location.pathname.toLowerCase();
