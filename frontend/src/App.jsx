@@ -137,19 +137,6 @@ const triggerToast = (msg, type = 'success') => {
 };
 
 export default function App() {
-  const [activeView, setActiveView] = useState(() => {
-    const path = window.location.pathname.toLowerCase();
-    if (path.includes('/login')) return 'login';
-    if (path.includes('/waiter')) return 'waiter';
-    if (path.includes('/manager')) return 'manager';
-    return 'guest';
-  });
-
-  const [roomFromUrl, setRoomFromUrl] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('room') || '';
-  });
-
   // Basic staff authentication state backed by localStorage
   const [staffUser, setStaffUser] = useState(() => {
     try {
@@ -160,26 +147,70 @@ export default function App() {
     }
   });
 
+  const [activeView, setActiveView] = useState(() => {
+    const path = window.location.pathname.toLowerCase();
+    let savedUser = null;
+    try {
+      const saved = localStorage.getItem('smartstay_staff_user');
+      savedUser = saved ? JSON.parse(saved) : null;
+    } catch {}
+
+    if (path.includes('/login')) return 'login';
+
+    if (path.includes('/waiter')) {
+      if (!savedUser) return 'login';
+      if (savedUser.role === 'MANAGER') {
+        window.history.replaceState(null, '', '/manager');
+        return 'manager';
+      }
+      return 'waiter';
+    }
+
+    if (path.includes('/manager')) {
+      if (!savedUser) return 'login';
+      if (savedUser.role === 'WAITER') {
+        window.history.replaceState(null, '', '/waiter');
+        return 'waiter';
+      }
+      return 'manager';
+    }
+
+    return 'guest';
+  });
+
+  const [roomFromUrl, setRoomFromUrl] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('room') || '';
+  });
+
   useEffect(() => {
     const handleUrlChange = () => {
       const params = new URLSearchParams(window.location.search);
       setRoomFromUrl(params.get('room') || '');
       const path = window.location.pathname.toLowerCase();
+      const stored = localStorage.getItem('smartstay_staff_user');
+      const user = stored ? JSON.parse(stored) : null;
+
       if (path.includes('/login')) {
         setActiveView('login');
       } else if (path.includes('/waiter')) {
-        const stored = localStorage.getItem('smartstay_staff_user');
-        if (!stored) {
+        if (!user) {
+          window.history.replaceState(null, '', '/login');
           setActiveView('login');
+        } else if (user.role === 'MANAGER') {
+          triggerToast('Redirecting Manager to Manager Dashboard', 'info');
+          window.history.replaceState(null, '', '/manager');
+          setActiveView('manager');
         } else {
           setActiveView('waiter');
         }
       } else if (path.includes('/manager')) {
-        const stored = localStorage.getItem('smartstay_staff_user');
-        const user = stored ? JSON.parse(stored) : null;
         if (!user) {
+          window.history.replaceState(null, '', '/login');
           setActiveView('login');
-        } else if (user.role !== 'MANAGER') {
+        } else if (user.role === 'WAITER') {
+          triggerToast('Waiter role cannot access Manager Dashboard. Redirecting to Waiter Dashboard.', 'warning');
+          window.history.replaceState(null, '', '/waiter');
           setActiveView('waiter');
         } else {
           setActiveView('manager');
@@ -189,6 +220,27 @@ export default function App() {
     window.addEventListener('popstate', handleUrlChange);
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, []);
+
+  // Strict role-based redirect effect for runtime state changes
+  useEffect(() => {
+    if (!staffUser) {
+      if (activeView === 'waiter' || activeView === 'manager') {
+        window.history.replaceState(null, '', '/login');
+        setActiveView('login');
+      }
+      return;
+    }
+
+    if (activeView === 'manager' && staffUser.role === 'WAITER') {
+      triggerToast('Waiter role cannot access Manager Dashboard. Redirecting to Waiter Dashboard.', 'warning');
+      window.history.replaceState(null, '', '/waiter');
+      setActiveView('waiter');
+    } else if (activeView === 'waiter' && staffUser.role === 'MANAGER') {
+      triggerToast('Redirecting Manager to Manager Dashboard', 'info');
+      window.history.replaceState(null, '', '/manager');
+      setActiveView('manager');
+    }
+  }, [activeView, staffUser]);
 
   // Protected navigation handler with role checks
   const navigateToView = (targetView) => {
@@ -200,6 +252,9 @@ export default function App() {
         triggerToast('Please sign in to access the Waiter Dashboard', 'warning');
         window.history.pushState(null, '', '/login');
         setActiveView('login');
+      } else if (staffUser.role === 'MANAGER') {
+        window.history.pushState(null, '', '/manager');
+        setActiveView('manager');
       } else {
         window.history.pushState(null, '', '/waiter');
         setActiveView('waiter');
@@ -209,8 +264,8 @@ export default function App() {
         triggerToast('Please sign in to access the Manager Dashboard', 'warning');
         window.history.pushState(null, '', '/login');
         setActiveView('login');
-      } else if (staffUser.role !== 'MANAGER') {
-        triggerToast('Manager access required. Redirecting to Waiter Dashboard.', 'warning');
+      } else if (staffUser.role === 'WAITER') {
+        triggerToast('Waiter role cannot access Manager Dashboard. Redirecting to Waiter Dashboard.', 'warning');
         window.history.pushState(null, '', '/waiter');
         setActiveView('waiter');
       } else {
@@ -308,10 +363,16 @@ export default function App() {
             onSuccess={handleLoginSuccess}
             apiBaseUrl={API_BASE_URL}
           />
-        ) : activeView === 'waiter' ? (
+        ) : staffUser.role === 'WAITER' ? (
           <WaiterView />
-        ) : (
+        ) : staffUser.role === 'MANAGER' ? (
           <ManagerView />
+        ) : (
+          <Login
+            targetView={activeView}
+            onSuccess={handleLoginSuccess}
+            apiBaseUrl={API_BASE_URL}
+          />
         )}
       </main>
 
