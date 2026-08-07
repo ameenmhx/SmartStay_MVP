@@ -276,81 +276,25 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
-            {/* View Switcher Toggle - 3 Views: Guest, Waiter, Manager */}
-            <div className="flex items-center p-1 bg-brand-surface rounded-xl border border-brand-border overflow-x-auto">
+          {staffUser && (
+            <div className="flex items-center space-x-3">
+              <div className="hidden sm:flex flex-col text-right">
+                <span className="text-xs font-bold text-brand-heading">{staffUser.name}</span>
+                <span className="text-[10px] font-extrabold uppercase text-brand-primary tracking-wider">
+                  {staffUser.role}
+                </span>
+              </div>
               <button
-                id="nav-guest-view-btn"
-                onClick={() => navigateToView('guest')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
-                  activeView === 'guest'
-                    ? 'bg-brand-primary text-white shadow-stripe'
-                    : 'text-brand-body hover:text-brand-heading hover:bg-brand-card/50'
-                }`}
+                id="nav-logout-btn"
+                onClick={handleLogout}
+                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-all duration-200 shrink-0 cursor-pointer"
+                title={`Logged in as ${staffUser.email} (${staffUser.role})`}
               >
-                <ConciergeBell className="w-4 h-4" />
-                <span>Guest Portal</span>
-              </button>
-              <button
-                id="nav-waiter-view-btn"
-                onClick={() => navigateToView('waiter')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
-                  activeView === 'waiter'
-                    ? 'bg-brand-primary text-white shadow-stripe'
-                    : 'text-brand-body hover:text-brand-heading hover:bg-brand-card/50'
-                }`}
-              >
-                <UtensilsCrossed className="w-4 h-4" />
-                <span>Waiter Dashboard</span>
-              </button>
-              <button
-                id="nav-manager-view-btn"
-                onClick={() => navigateToView('manager')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
-                  activeView === 'manager'
-                    ? 'bg-brand-primary text-white shadow-stripe'
-                    : 'text-brand-body hover:text-brand-heading hover:bg-brand-card/50'
-                }`}
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span>Manager Dashboard</span>
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
-
-            {/* Auth Session / Logout Indicator */}
-            {staffUser ? (
-              <div className="flex items-center space-x-2">
-                <div className="hidden sm:flex flex-col text-right">
-                  <span className="text-xs font-bold text-brand-heading">{staffUser.name}</span>
-                  <span className="text-[10px] font-extrabold uppercase text-brand-primary tracking-wider">
-                    {staffUser.role}
-                  </span>
-                </div>
-                <button
-                  id="nav-logout-btn"
-                  onClick={handleLogout}
-                  className="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-all duration-200 shrink-0 cursor-pointer"
-                  title={`Logged in as ${staffUser.email} (${staffUser.role})`}
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
-              </div>
-            ) : (
-              <button
-                id="nav-login-btn"
-                onClick={() => navigateToView('login')}
-                className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
-                  activeView === 'login'
-                    ? 'bg-brand-primary text-white shadow-stripe'
-                    : 'bg-brand-surface hover:bg-brand-card text-brand-heading border border-brand-border'
-                }`}
-              >
-                <Shield className="w-4 h-4 text-brand-primary" />
-                <span>Staff Login</span>
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </header>
 
@@ -2570,6 +2514,16 @@ function ManagerView() {
   };
 
   const handleDeleteStaff = async (id, staffName) => {
+    if (
+      staffUser &&
+      ((staffUser.id && String(staffUser.id) === String(id)) ||
+        (staffUser.email &&
+          staffList.find((s) => String(s.id) === String(id))?.email?.toLowerCase() ===
+            staffUser.email.toLowerCase()))
+    ) {
+      triggerToast('You cannot delete your own account', 'error');
+      return;
+    }
     if (!window.confirm(`Are you sure you want to delete staff member "${staffName}"?`)) {
       return;
     }
@@ -4456,6 +4410,12 @@ function ManagerView() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {staffList.map((member) => {
                 const isManager = (member.role || '').toUpperCase() === 'MANAGER';
+                const isSelf =
+                  staffUser &&
+                  ((staffUser.id && String(staffUser.id) === String(member.id)) ||
+                    (staffUser.email &&
+                      member.email &&
+                      member.email.toLowerCase() === staffUser.email.toLowerCase()));
                 return (
                   <div
                     key={member.id}
@@ -4472,7 +4432,14 @@ function ManagerView() {
                         {isManager ? <Briefcase className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
                       </div>
                       <div>
-                        <h4 className="text-sm font-semibold text-brand-heading leading-tight">{member.name}</h4>
+                        <div className="flex items-center space-x-2">
+                          <h4 className="text-sm font-semibold text-brand-heading leading-tight">{member.name}</h4>
+                          {isSelf && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 uppercase">
+                              You
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-brand-body font-mono mt-0.5">{member.email}</p>
                         <span
                           className={`inline-block mt-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase border ${
@@ -4486,15 +4453,27 @@ function ManagerView() {
                       </div>
                     </div>
 
-                    <button
-                      id={`delete-staff-btn-${member.id}`}
-                      type="button"
-                      onClick={() => handleDeleteStaff(member.id, member.name)}
-                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-200 cursor-pointer"
-                      title={`Delete Staff ${member.name}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {isSelf ? (
+                      <button
+                        id={`delete-staff-btn-${member.id}`}
+                        type="button"
+                        disabled
+                        className="p-2 text-slate-300 bg-slate-50 rounded-lg border border-slate-200 cursor-not-allowed opacity-50"
+                        title="You cannot delete your active admin account"
+                      >
+                        <Trash2 className="w-4 h-4 text-slate-300" />
+                      </button>
+                    ) : (
+                      <button
+                        id={`delete-staff-btn-${member.id}`}
+                        type="button"
+                        onClick={() => handleDeleteStaff(member.id, member.name)}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-200 cursor-pointer"
+                        title={`Delete Staff ${member.name}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
