@@ -147,16 +147,6 @@ export default function App() {
     }
   });
 
-  const currentUser = staffUser || (() => {
-    try {
-      const saved = localStorage.getItem('user') || localStorage.getItem('smartstay_staff_user');
-      const parsed = saved ? JSON.parse(saved) : null;
-      return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-      return {};
-    }
-  })();
-
   const [activeView, setActiveView] = useState(() => {
     const path = window.location.pathname.toLowerCase();
     let savedUser = null;
@@ -2585,15 +2575,7 @@ function ManagerView() {
   };
 
   const handleDeleteStaff = async (id, staffName) => {
-    const activeUser =
-      currentUser ||
-      (() => {
-        try {
-          return JSON.parse(localStorage.getItem('user') || localStorage.getItem('smartstay_staff_user') || '{}');
-        } catch {
-          return { email: '' };
-        }
-      })();
+    const activeUser = staffUser;
     if (
       activeUser &&
       ((activeUser.id && String(activeUser.id) === String(id)) ||
@@ -4490,15 +4472,7 @@ function ManagerView() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {staffList.map((member) => {
                 const isManager = (member.role || '').toUpperCase() === 'MANAGER';
-                const activeUser =
-                  currentUser ||
-                  (() => {
-                    try {
-                      return JSON.parse(localStorage.getItem('user') || localStorage.getItem('smartstay_staff_user') || '{}');
-                    } catch {
-                      return { email: '' };
-                    }
-                  })();
+                const activeUser = staffUser;
                 const isSelf =
                   activeUser &&
                   ((activeUser.id && String(activeUser.id) === String(member.id)) ||
