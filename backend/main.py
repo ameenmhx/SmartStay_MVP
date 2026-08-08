@@ -548,6 +548,23 @@ async def delete_gallery_item(item_id: str):
     }
 
 
+# GET /rooms - Fetch all rooms and their real-time status from "rooms" Supabase table
+@app.get("/rooms")
+async def get_all_rooms():
+    try:
+        response = supabase.table("rooms").select("*").order("room_number").execute()
+        return {
+            "status": "success",
+            "count": len(response.data) if response.data else 0,
+            "data": response.data or []
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch rooms from Supabase: {str(e)}"
+        )
+
+
 # GET /room/{room_number} - Fetch room status (is_active, guest_phone) for Guest Portal verification
 @app.get("/room/{room_number}")
 async def get_room_status(room_number: str):
@@ -610,6 +627,15 @@ async def checkin_room(room_number: str, checkin_data: RoomCheckin):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to check in room {room_number}: {str(e)}"
         )
+
+    # Broadcast checkin event to all connected WebSockets
+    broadcast_message = {
+        "type": "checkin",
+        "room": room_number,
+        "is_active": True,
+        "guest_phone": guest_phone
+    }
+    await manager.broadcast(broadcast_message)
 
     return {
         "message": f"Room {room_number} checked in successfully.",

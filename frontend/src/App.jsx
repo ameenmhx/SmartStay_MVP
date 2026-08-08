@@ -2783,10 +2783,14 @@ function ManagerView() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   // Check-In Guest modal state
   const [showCheckinModal, setShowCheckinModal] = useState(false);
+  const [selectedRoomForCheckin, setSelectedRoomForCheckin] = useState('101');
   const [checkinPhone, setCheckinPhone] = useState('');
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [roomList, setRoomList] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [roomFilterStatus, setRoomFilterStatus] = useState('ALL');
+  const [roomSearchQuery, setRoomSearchQuery] = useState('');
 
   // QR Generator Mode: 'single' | 'bulk'
   const [qrMode, setQrMode] = useState('single');
@@ -2799,6 +2803,7 @@ function ManagerView() {
   const socketRef = useRef(null);
 
   // Bottom Navigation State & Refs
+  const frontDeskRef = useRef(null);
   const analyticsRef = useRef(null);
   const qrGeneratorRef = useRef(null);
   const liveFeedRef = useRef(null);
@@ -2806,7 +2811,7 @@ function ManagerView() {
   const galleryManageRef = useRef(null);
   const servicesManageRef = useRef(null);
   const staffManageRef = useRef(null);
-  const [activeNavTab, setActiveNavTab] = useState('analytics');
+  const [activeNavTab, setActiveNavTab] = useState('frontdesk');
 
   // Staff Management CMS State for Manager
   const [staffList, setStaffList] = useState([]);
@@ -3029,7 +3034,8 @@ function ManagerView() {
     const handleIntersect = (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          if (entry.target === analyticsRef.current) setActiveNavTab('analytics');
+          if (entry.target === frontDeskRef.current) setActiveNavTab('frontdesk');
+          else if (entry.target === analyticsRef.current) setActiveNavTab('analytics');
           else if (entry.target === qrGeneratorRef.current) setActiveNavTab('qr');
           else if (entry.target === liveFeedRef.current) setActiveNavTab('feed');
           else if (entry.target === reviewsRef.current) setActiveNavTab('reviews');
@@ -3040,6 +3046,7 @@ function ManagerView() {
     };
 
     const observer = new IntersectionObserver(handleIntersect, options);
+    if (frontDeskRef.current) observer.observe(frontDeskRef.current);
     if (analyticsRef.current) observer.observe(analyticsRef.current);
     if (qrGeneratorRef.current) observer.observe(qrGeneratorRef.current);
     if (liveFeedRef.current) observer.observe(liveFeedRef.current);
@@ -3478,10 +3485,54 @@ function ManagerView() {
     }, 300);
   };
 
+  // Fetch all rooms from Supabase / backend
+  const fetchRooms = useCallback(async () => {
+    setLoadingRooms(true);
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .order('room_number', { ascending: true });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        setRooms(data);
+      } else {
+        const res = await fetch(`${API_BASE_URL}/rooms`);
+        if (res.ok) {
+          const result = await res.json();
+          if (result && Array.isArray(result.data)) {
+            setRooms(result.data);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching rooms:', err);
+    } finally {
+      setLoadingRooms(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRooms();
+  }, [fetchRooms]);
+
+  // Open Check-In Modal for specific room
+  const handleOpenCheckinModal = (roomNum) => {
+    const targetRoom = roomNum || qrRoomNumber || '101';
+    const roomObj = rooms.find((r) => String(r.room_number) === String(targetRoom));
+    if (roomObj && roomObj.is_active) {
+      triggerToast(`Room ${targetRoom} is already occupied. Please check out first.`, 'warning');
+      return;
+    }
+    setSelectedRoomForCheckin(targetRoom);
+    setCheckinPhone('');
+    setShowCheckinModal(true);
+  };
+
   // Check-Out / Reset Room API call
-  const handleCheckoutRoom = async () => {
-    const roomToCheckout = qrRoomNumber || '101';
-    if (!window.confirm(`Are you sure you want to check out Room ${roomToCheckout}? This will clear all active service requests and invalidate the guest's session.`)) return;
+  const handleCheckoutRoom = async (targetRoomNum) => {
+    const roomToCheckout = targetRoomNum || selectedRoomForCheckin || qrRoomNumber || '101';
+    if (!window.confirm(`Are you sure you want to check out Room ${roomToCheckout}? This will clear all active service requests and reset the room to vacant.`)) return;
     setCheckoutLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/room/${encodeURIComponent(roomToCheckout)}/checkout`, {
@@ -3490,6 +3541,7 @@ function ManagerView() {
       if (res.ok) {
         setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(roomToCheckout)));
         triggerToast(`Room ${roomToCheckout} checked out successfully.`, 'success');
+        await fetchRooms();
       } else {
         console.error(`Checkout API failed with status ${res.status}`);
         triggerToast('Checkout failed. Please try again.', 'error');
@@ -3505,12 +3557,21 @@ function ManagerView() {
   // Check-In Guest: saves phone number and activates room in Supabase
   const handleCheckinRoom = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const roomToCheckin = qrRoomNumber || '101';
+    const roomToCheckin = selectedRoomForCheckin || qrRoomNumber || '101';
     const phone = checkinPhone.trim();
     if (!phone) {
       triggerToast('Please enter a guest phone number.', 'warning');
       return;
     }
+
+    // Safety check: Prevent checkin if already active
+    const roomObj = rooms.find((r) => String(r.room_number) === String(roomToCheckin));
+    if (roomObj && roomObj.is_active) {
+      triggerToast(`Room ${roomToCheckin} is already active. Check-in cancelled.`, 'warning');
+      setShowCheckinModal(false);
+      return;
+    }
+
     setCheckinLoading(true);
     try {
       const fetchUrl = `${API_BASE_URL}/room/${encodeURIComponent(roomToCheckin)}/checkin`;
@@ -3522,25 +3583,9 @@ function ManagerView() {
 
       if (res.ok) {
         triggerToast(`✅ Room ${roomToCheckin} checked in! Guest phone saved.`, 'success');
-
-        // Update room list state to reflect active status
-        const updatedRoom = { room_number: roomToCheckin, is_active: true, guest_phone: phone, status: 'Active' };
-        setRoomList((prev) => {
-          const exists = prev.some((r) => String(r.room_number) === String(roomToCheckin));
-          return exists
-            ? prev.map((r) => (String(r.room_number) === String(roomToCheckin) ? { ...r, ...updatedRoom } : r))
-            : [...prev, updatedRoom];
-        });
-        setRooms((prev) => {
-          const exists = prev.some((r) => String(r.room_number) === String(roomToCheckin));
-          return exists
-            ? prev.map((r) => (String(r.room_number) === String(roomToCheckin) ? { ...r, ...updatedRoom } : r))
-            : [...prev, updatedRoom];
-        });
-
-        // Close check-in modal and clear phone input
         setShowCheckinModal(false);
         setCheckinPhone('');
+        await fetchRooms();
       } else {
         const errData = await res.json().catch(() => ({}));
         const errorMessage = errData?.detail || `Check-in failed with status ${res.status}`;
@@ -3683,10 +3728,13 @@ function ManagerView() {
         } else if (parsed.type === 'cancel') {
           const cancelledId = parsed.request_id;
           setRequests((prev) => prev.filter((r) => String(r.id) !== String(cancelledId)));
-        } else if (parsed.type === 'checkout' || parsed.event === 'checkout') {
+        } else if (parsed.type === 'checkout' || parsed.event === 'checkout' || parsed.type === 'checkin' || parsed.event === 'checkin') {
           playNotificationSound();
           const checkedOutRoom = parsed.room || parsed.room_number || parsed.data?.room;
-          setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
+          if (checkedOutRoom) {
+            setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
+          }
+          fetchRooms();
         } else if (parsed.type === 'ping' || parsed.type === 'service_request' || parsed.type === 'new_request') {
           playNotificationSound();
         } else if (parsed.type === 'clear_completed') {
@@ -3786,7 +3834,7 @@ function ManagerView() {
                 Front Desk · Check-In
               </span>
               <h3 className="text-xl font-extrabold text-white tracking-tight">
-                Check-In Guest — Suite {qrRoomNumber || '101'}
+                Check-In Guest — Suite {selectedRoomForCheckin || qrRoomNumber || '101'}
               </h3>
               <p className="text-xs text-emerald-100 mt-1 leading-relaxed">
                 Enter the guest's registered phone number. They will use this to verify their identity on the portal.
@@ -3823,7 +3871,7 @@ function ManagerView() {
               <div className="flex items-start gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <p className="text-xs text-emerald-700 font-medium leading-relaxed">
-                  This activates Suite <strong>{qrRoomNumber || '101'}</strong> and binds it to the guest's phone. The portal will be locked until the guest enters this number.
+                  This activates Suite <strong>{selectedRoomForCheckin || qrRoomNumber || '101'}</strong> and binds it to the guest's phone. The portal will be locked until the guest enters this number.
                 </p>
               </div>
 
@@ -3983,6 +4031,187 @@ function ManagerView() {
         </div>
       </div>
 
+      {/* ── LIVE FRONT DESK ROOM STATUS VIEW ────────────────────────────── */}
+      <div ref={frontDeskRef} className="scroll-mt-24 bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border space-y-8 shadow-stripe">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-brand-surface border border-brand-border text-brand-primary rounded-xl">
+              <ConciergeBell className="w-7 h-7" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2.5">
+                <h2 className="text-2xl text-brand-heading font-semibold tracking-tight">Live Front Desk & Room Status</h2>
+                <span className="px-3 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Real-time Sync
+                </span>
+              </div>
+              <p className="text-xs text-brand-body mt-0.5">
+                Monitor room occupancy, guest contact details, and execute instant check-in / check-out actions across the resort.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              id="refresh-front-desk-btn"
+              onClick={fetchRooms}
+              disabled={loadingRooms}
+              className="p-2.5 px-4 bg-brand-surface hover:bg-brand-surface/80 border border-brand-border rounded-xl text-brand-heading transition-all text-xs font-bold flex items-center space-x-2 shadow-stripe cursor-pointer"
+            >
+              <RefreshCw className={`w-4 h-4 text-brand-primary ${loadingRooms ? 'animate-spin' : ''}`} />
+              <span>Refresh Status</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Room Status Summary Cards & Filters */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-brand-surface p-4 rounded-xl border border-brand-border">
+          {/* Summary Pills */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="px-3.5 py-1.5 bg-white border border-brand-border rounded-lg shadow-sm flex items-center gap-2">
+              <span className="text-xs text-slate-500 font-medium">Total Rooms:</span>
+              <span className="text-sm font-extrabold text-slate-900">{rooms.length}</span>
+            </div>
+            <div className="px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg shadow-sm flex items-center gap-2">
+              <span className="text-xs text-emerald-700 font-medium">Occupied:</span>
+              <span className="text-sm font-extrabold text-emerald-800">{rooms.filter(r => r.is_active).length}</span>
+            </div>
+            <div className="px-3.5 py-1.5 bg-amber-50 border border-amber-200 rounded-lg shadow-sm flex items-center gap-2">
+              <span className="text-xs text-amber-700 font-medium">Vacant:</span>
+              <span className="text-sm font-extrabold text-amber-800">{rooms.filter(r => !r.is_active).length}</span>
+            </div>
+          </div>
+
+          {/* Filter & Search controls */}
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <input
+                type="text"
+                value={roomSearchQuery}
+                onChange={(e) => setRoomSearchQuery(e.target.value)}
+                placeholder="Search room or phone..."
+                className="pl-8 pr-3 py-1.5 text-xs bg-white border border-brand-border rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-primary"
+              />
+              <Home className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            </div>
+
+            <div className="flex p-0.5 bg-white border border-brand-border rounded-lg text-xs">
+              <button
+                onClick={() => setRoomFilterStatus('ALL')}
+                className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${roomFilterStatus === 'ALL' ? 'bg-brand-primary text-white' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setRoomFilterStatus('OCCUPIED')}
+                className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${roomFilterStatus === 'OCCUPIED' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                Occupied
+              </button>
+              <button
+                onClick={() => setRoomFilterStatus('VACANT')}
+                className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${roomFilterStatus === 'VACANT' ? 'bg-amber-600 text-white' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                Vacant
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Room Status Table */}
+        <div className="overflow-x-auto rounded-xl border border-brand-border shadow-sm">
+          <table className="w-full text-left border-collapse bg-white">
+            <thead>
+              <tr className="bg-brand-surface/80 border-b border-brand-border text-slate-600 uppercase text-[11px] font-bold tracking-wider">
+                <th className="py-3.5 px-6">Room Number</th>
+                <th className="py-3.5 px-6">Status</th>
+                <th className="py-3.5 px-6">Guest Phone Number</th>
+                <th className="py-3.5 px-6 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-brand-border text-sm font-medium text-slate-800">
+              {rooms
+                .filter(room => {
+                  const matchSearch = String(room.room_number || '').toLowerCase().includes(roomSearchQuery.toLowerCase()) ||
+                    String(room.guest_phone || '').toLowerCase().includes(roomSearchQuery.toLowerCase());
+                  if (!matchSearch) return false;
+                  if (roomFilterStatus === 'OCCUPIED') return room.is_active;
+                  if (roomFilterStatus === 'VACANT') return !room.is_active;
+                  return true;
+                })
+                .map((room) => {
+                  const isActive = Boolean(room.is_active);
+                  return (
+                    <tr key={room.room_number || room.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-4 px-6 font-bold text-slate-900">
+                        <div className="flex items-center space-x-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-brand-surface border border-brand-border flex items-center justify-center font-mono font-bold text-xs text-brand-primary">
+                            {room.room_number}
+                          </div>
+                          <span>Suite {room.room_number}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        {isActive ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Occupied
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                            Vacant
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 font-mono text-xs">
+                        {isActive && room.guest_phone ? (
+                          <div className="flex items-center space-x-2 text-slate-900 font-semibold">
+                            <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{room.guest_phone}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">— Not Checked In</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        {isActive ? (
+                          <button
+                            id={`checkout-btn-room-${room.room_number}`}
+                            onClick={() => handleCheckoutRoom(room.room_number)}
+                            disabled={checkoutLoading}
+                            className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 hover:border-red-300 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ml-auto cursor-pointer active:scale-95"
+                          >
+                            <LogOut className="w-3.5 h-3.5 text-red-500" />
+                            <span>Check-Out</span>
+                          </button>
+                        ) : (
+                          <button
+                            id={`checkin-btn-room-${room.room_number}`}
+                            onClick={() => handleOpenCheckinModal(room.room_number)}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ml-auto cursor-pointer active:scale-95 border border-emerald-700"
+                          >
+                            <LogIn className="w-3.5 h-3.5 text-white" />
+                            <span>Check-In</span>
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              {rooms.length === 0 && !loadingRooms && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-slate-500 text-xs italic">
+                    No rooms found in database.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Room QR Generator Section with Single & Bulk Toggle */}
       <div ref={qrGeneratorRef} className="scroll-mt-24 bg-brand-card p-8 sm:p-10 rounded-2xl border border-brand-border space-y-8 shadow-stripe">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-5">
@@ -4067,16 +4296,6 @@ function ManagerView() {
               </div>
 
               <div className="pt-2 flex flex-wrap gap-4">
-                {/* Check-In Guest Button */}
-                <button
-                  id="checkin-guest-btn"
-                  onClick={() => { setShowCheckinModal(true); setCheckinPhone(''); }}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-all shadow-stripe flex items-center space-x-2 cursor-pointer active:scale-[0.98] border border-emerald-700"
-                >
-                  <LogIn className="w-4 h-4 text-white" />
-                  <span>Check-In Guest</span>
-                </button>
-
                 <button
                   id="qr-print-download-btn"
                   onClick={handlePrintQR}
@@ -4085,16 +4304,6 @@ function ManagerView() {
                   <Printer className="w-4 h-4 text-white" />
                   <Download className="w-4 h-4 ml-0.5 text-white" />
                   <span>Print Single QR</span>
-                </button>
-
-                <button
-                  id="checkout-room-btn"
-                  disabled={checkoutLoading}
-                  onClick={handleCheckoutRoom}
-                  className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-semibold transition-all shadow-stripe hover:shadow-stripe-hover flex items-center space-x-2 active:scale-[0.98] cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4 text-red-500" />
-                  <span>{checkoutLoading ? 'Processing Checkout...' : 'Checkout / Reset Room'}</span>
                 </button>
               </div>
             </div>
@@ -4943,6 +5152,15 @@ function ManagerView() {
 
       {/* Fixed Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white/70 backdrop-blur-xl border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] py-4 px-6 flex justify-around items-center transition-all duration-300">
+        <button
+          onClick={() => scrollToSection(frontDeskRef, 'frontdesk')}
+          className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
+            activeNavTab === 'frontdesk' ? 'text-slate-900 scale-105 font-semibold' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <ConciergeBell className="w-5 h-5" />
+          <span className="text-[10px] tracking-wide font-sans">Front Desk</span>
+        </button>
         <button
           onClick={() => scrollToSection(liveFeedRef, 'feed')}
           className={`flex flex-col items-center gap-1 cursor-pointer transition-all duration-200 ${
