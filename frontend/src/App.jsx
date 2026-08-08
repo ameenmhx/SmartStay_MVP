@@ -2389,6 +2389,7 @@ function WaiterView() {
    MANAGER VIEW COMPONENT (ANALYTICS & BULK QR PRINT DASHBOARD)
    ========================================================================== */
 function ManagerView() {
+  const staffUser = JSON.parse(localStorage.getItem('smartstay_staff_user')) || {};
   const [requests, setRequests] = useState([]);
   const requestsStateRef = useRef([]);
 
