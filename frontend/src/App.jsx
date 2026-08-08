@@ -2767,17 +2767,6 @@ function ManagerView() {
 
       if (apiSuccess || wsSuccess) {
         triggerToast(`Reminder sent to Waiter for Room ${req.room_number}`, 'success');
-        setActivityLogs((prev) => [
-          {
-            id: Date.now() + Math.random(),
-            type: 'NUDGE',
-            timestamp: new Date().toLocaleTimeString(),
-            message: `Reminded waiter for Room ${req.room_number} (${payload.item_name})`,
-            room: req.room_number,
-            status: 'Reminded',
-          },
-          ...prev.slice(0, 49),
-        ]);
       } else {
         triggerToast(`Failed to send reminder for Room ${req.room_number}`, 'error');
       }
@@ -3500,17 +3489,6 @@ function ManagerView() {
       });
       if (res.ok) {
         setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(roomToCheckout)));
-        setActivityLogs((prev) => [
-          {
-            id: Date.now() + Math.random(),
-            type: 'CHECKOUT',
-            timestamp: new Date().toLocaleTimeString(),
-            message: `Checkout / Reset completed for ${roomToCheckout}`,
-            room: roomToCheckout,
-            status: 'Cleared',
-          },
-          ...prev.slice(0, 49),
-        ]);
         triggerToast(`Room ${roomToCheckout} checked out successfully.`, 'success');
       } else {
         console.error(`Checkout API failed with status ${res.status}`);
@@ -3544,17 +3522,6 @@ function ManagerView() {
 
       if (res.ok) {
         triggerToast(`✅ Room ${roomToCheckin} checked in! Guest phone saved.`, 'success');
-        setActivityLogs((prev) => [
-          {
-            id: Date.now() + Math.random(),
-            type: 'CHECKIN',
-            timestamp: new Date().toLocaleTimeString(),
-            message: `Room ${roomToCheckin} checked in — guest phone registered`,
-            room: roomToCheckin,
-            status: 'Active',
-          },
-          ...prev.slice(0, 49),
-        ]);
 
         // Update room list state to reflect active status
         const updatedRoom = { room_number: roomToCheckin, is_active: true, guest_phone: phone, status: 'Active' };
@@ -3703,17 +3670,6 @@ function ManagerView() {
             }
             return [newReq, ...prev];
           });
-          setActivityLogs((prev) => [
-            {
-              id: Date.now() + Math.random(),
-              type: 'NEW_ORDER',
-              timestamp: new Date().toLocaleTimeString(),
-              message: `New request "${newReq.item_requested}" received from Room ${newReq.room_number}`,
-              room: newReq.room_number,
-              status: newReq.status,
-            },
-            ...prev.slice(0, 49),
-          ]);
         } else if (parsed.event === 'STATUS_UPDATE' && parsed.data) {
           const updated = parsed.data;
           const normalizedStat = normalizeStatus(updated.status);
@@ -3724,44 +3680,13 @@ function ManagerView() {
                 : r
             )
           );
-          setActivityLogs((prev) => [
-            {
-              id: Date.now() + Math.random(),
-              type: 'STATUS_CHANGE',
-              timestamp: new Date().toLocaleTimeString(),
-              message: `Order #${updated.id} status changed to "${normalizedStat}"`,
-              status: normalizedStat,
-            },
-            ...prev.slice(0, 49),
-          ]);
         } else if (parsed.type === 'cancel') {
           const cancelledId = parsed.request_id;
           setRequests((prev) => prev.filter((r) => String(r.id) !== String(cancelledId)));
-          setActivityLogs((prev) => [
-            {
-              id: Date.now() + Math.random(),
-              type: 'CANCEL',
-              timestamp: new Date().toLocaleTimeString(),
-              message: `Order #${cancelledId} cancelled by guest`,
-              status: 'Cancelled',
-            },
-            ...prev.slice(0, 49),
-          ]);
         } else if (parsed.type === 'checkout' || parsed.event === 'checkout') {
           playNotificationSound();
           const checkedOutRoom = parsed.room || parsed.room_number || parsed.data?.room;
           setRequests((prev) => prev.filter((r) => String(r.room_number) !== String(checkedOutRoom)));
-          setActivityLogs((prev) => [
-            {
-              id: Date.now() + Math.random(),
-              type: 'CHECKOUT',
-              timestamp: new Date().toLocaleTimeString(),
-              message: `Room ${checkedOutRoom} checked out - requests cleared`,
-              room: checkedOutRoom,
-              status: 'Cleared',
-            },
-            ...prev.slice(0, 49),
-          ]);
         } else if (parsed.type === 'ping' || parsed.type === 'service_request' || parsed.type === 'new_request') {
           playNotificationSound();
         } else if (parsed.type === 'clear_completed') {
@@ -3775,16 +3700,6 @@ function ManagerView() {
             )
           );
           triggerToast('Completed and delivered requests cleared.', 'info');
-          setActivityLogs((prev) => [
-            {
-              id: Date.now() + Math.random(),
-              type: 'CLEAR_COMPLETED',
-              timestamp: new Date().toLocaleTimeString(),
-              message: `Completed/delivered requests cleared from dashboard`,
-              status: 'Cleared',
-            },
-            ...prev.slice(0, 49),
-          ]);
         }
       } catch (err) {
         console.error('Error parsing Manager WS event:', err);
