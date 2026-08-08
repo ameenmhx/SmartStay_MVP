@@ -81,6 +81,11 @@ class RoomCheckin(BaseModel):
     guest_phone: str
 
 
+class APIRoomCheckin(BaseModel):
+    room_number: str
+    guest_phone: str
+
+
 class GalleryItem(BaseModel):
     title: str
     description: str
@@ -610,6 +615,11 @@ async def checkin_room(room_number: str, checkin_data: RoomCheckin):
         "message": f"Room {room_number} checked in successfully.",
         "data": room_record
     }
+
+
+@app.post("/api/rooms/checkin", status_code=status.HTTP_200_OK)
+async def api_checkin_room(checkin_data: APIRoomCheckin):
+    return await checkin_room(checkin_data.room_number, RoomCheckin(guest_phone=checkin_data.guest_phone))
 
 
 # DELETE /room/{room_number}/checkout - Delete all service requests for a room, reset room status, and broadcast checkout event

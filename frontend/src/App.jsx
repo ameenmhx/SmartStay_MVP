@@ -2796,6 +2796,8 @@ function ManagerView() {
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [checkinPhone, setCheckinPhone] = useState('');
   const [checkinLoading, setCheckinLoading] = useState(false);
+  const [roomList, setRoomList] = useState([]);
+  const [rooms, setRooms] = useState([]);
 
   // QR Generator Mode: 'single' | 'bulk'
   const [qrMode, setQrMode] = useState('single');
@@ -3524,7 +3526,7 @@ function ManagerView() {
 
   // Check-In Guest: saves phone number and activates room in Supabase
   const handleCheckinRoom = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     const roomToCheckin = qrRoomNumber || '101';
     const phone = checkinPhone.trim();
     if (!phone) {
@@ -3533,11 +3535,13 @@ function ManagerView() {
     }
     setCheckinLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/room/${encodeURIComponent(roomToCheckin)}/checkin`, {
+      const fetchUrl = `${API_BASE_URL}/room/${encodeURIComponent(roomToCheckin)}/checkin`;
+      const res = await fetch(fetchUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guest_phone: phone }),
       });
+
       if (res.ok) {
         triggerToast(`✅ Room ${roomToCheckin} checked in! Guest phone saved.`, 'success');
         setActivityLogs((prev) => [
@@ -3551,15 +3555,35 @@ function ManagerView() {
           },
           ...prev.slice(0, 49),
         ]);
+
+        // Update room list state to reflect active status
+        const updatedRoom = { room_number: roomToCheckin, is_active: true, guest_phone: phone, status: 'Active' };
+        setRoomList((prev) => {
+          const exists = prev.some((r) => String(r.room_number) === String(roomToCheckin));
+          return exists
+            ? prev.map((r) => (String(r.room_number) === String(roomToCheckin) ? { ...r, ...updatedRoom } : r))
+            : [...prev, updatedRoom];
+        });
+        setRooms((prev) => {
+          const exists = prev.some((r) => String(r.room_number) === String(roomToCheckin));
+          return exists
+            ? prev.map((r) => (String(r.room_number) === String(roomToCheckin) ? { ...r, ...updatedRoom } : r))
+            : [...prev, updatedRoom];
+        });
+
+        // Close check-in modal and clear phone input
         setShowCheckinModal(false);
         setCheckinPhone('');
       } else {
         const errData = await res.json().catch(() => ({}));
-        triggerToast(errData?.detail || 'Check-in failed. Please try again.', 'error');
+        const errorMessage = errData?.detail || `Check-in failed with status ${res.status}`;
+        throw new Error(errorMessage);
       }
     } catch (err) {
       console.error('Check-in error:', err);
-      triggerToast('Check-in error: ' + err.message, 'error');
+      const errorMsg = err.message || 'An unexpected error occurred during check-in.';
+      alert(`Check-in Error: ${errorMsg}`);
+      triggerToast(`Check-in error: ${errorMsg}`, 'error');
     } finally {
       setCheckinLoading(false);
     }
