@@ -77,6 +77,10 @@ class GuestReviewCreate(BaseModel):
     comment: str = ""
 
 
+class RoomCheckin(BaseModel):
+    guest_phone: str
+
+
 class GalleryItem(BaseModel):
     title: str
     description: str
@@ -539,7 +543,76 @@ async def delete_gallery_item(item_id: str):
     }
 
 
-# DELETE /room/{room_number}/checkout - Delete all service requests for a room and broadcast checkout event
+# GET /room/{room_number} - Fetch room status (is_active, guest_phone) for Guest Portal verification
+@app.get("/room/{room_number}")
+async def get_room_status(room_number: str):
+    try:
+        response = (
+            supabase.table("rooms")
+            .select("room_number,is_active,guest_phone")
+            .eq("room_number", room_number)
+            .execute()
+        )
+        if response.data and len(response.data) > 0:
+            return {
+                "status": "success",
+                "data": response.data[0]
+            }
+        # Room not yet in table — treat as inactive
+        return {
+            "status": "success",
+            "data": {"room_number": room_number, "is_active": False, "guest_phone": None}
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch room status for {room_number}: {str(e)}"
+        )
+
+
+# POST /room/{room_number}/checkin - Activate a room and store guest phone number
+@app.post("/room/{room_number}/checkin", status_code=status.HTTP_200_OK)
+async def checkin_room(room_number: str, checkin_data: RoomCheckin):
+    guest_phone = checkin_data.guest_phone.strip()
+    if not guest_phone:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="guest_phone is required for check-in."
+        )
+
+    payload = {
+        "room_number": room_number,
+        "is_active": True,
+        "guest_phone": guest_phone,
+    }
+
+    try:
+        response = (
+            supabase.table("rooms")
+            .upsert(payload, on_conflict="room_number")
+            .execute()
+        )
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="No data returned from rooms upsert."
+            )
+        room_record = response.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to check in room {room_number}: {str(e)}"
+        )
+
+    return {
+        "message": f"Room {room_number} checked in successfully.",
+        "data": room_record
+    }
+
+
+# DELETE /room/{room_number}/checkout - Delete all service requests for a room, reset room status, and broadcast checkout event
 @app.delete("/room/{room_number}/checkout")
 async def checkout_room(room_number: str):
     try:
@@ -555,6 +628,16 @@ async def checkout_room(room_number: str):
             detail=f"Failed to delete service requests for room {room_number}: {str(e)}"
         )
 
+    # Reset room row in rooms table: clear is_active and guest_phone
+    try:
+        supabase.table("rooms").upsert(
+            {"room_number": room_number, "is_active": False, "guest_phone": None},
+            on_conflict="room_number"
+        ).execute()
+    except Exception as e:
+        # Non-fatal: log and continue so checkout still succeeds even if rooms table isn't ready
+        print(f"Warning: could not reset rooms table for {room_number}: {e}")
+
     # Broadcast checkout event to all connected WebSockets
     broadcast_message = {
         "type": "checkout",
@@ -563,7 +646,7 @@ async def checkout_room(room_number: str):
     await manager.broadcast(broadcast_message)
 
     return {
-        "message": f"Successfully cleared all service requests for room {room_number}",
+        "message": f"Successfully checked out room {room_number} and cleared all service requests.",
         "room": room_number,
         "deleted_records": response.data or []
     }

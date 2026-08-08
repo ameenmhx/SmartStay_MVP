@@ -56,6 +56,12 @@ import {
   Shield,
   UserCheck,
   Briefcase,
+  Phone,
+  PhoneCall,
+  Lock,
+  AlertTriangle,
+  X,
+  LogIn,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
@@ -399,6 +405,120 @@ function GuestView({ roomFromUrl }) {
   const selectedRoom = roomFromUrl ? roomFromUrl.trim() : '';
   const hasRoomParam = Boolean(selectedRoom);
 
+  // ── DEVICE BINDING & VERIFICATION STATE ──────────────────────────────────
+  // 'loading'     → fetching room status from backend
+  // 'unauthorized' → localStorage has a different room token (device binding block)
+  // 'verify'      → room is active but no valid token; show phone verification
+  // 'inactive'    → room is not yet checked in by manager
+  // 'granted'     → phone verified or token matches; show portal
+  const [authState, setAuthState] = useState('loading');
+  const [verifyPhone, setVerifyPhone] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  // Holds guest_phone from DB (only populated while on verify screen)
+  const roomPhoneRef = useRef(null);
+
+  useEffect(() => {
+    if (!hasRoomParam) return; // no room → skip auth entirely
+
+    const STORAGE_KEY = 'smartstay_auth';
+
+    // ── Step 1: Device Binding Check ──────────────────────────────────────
+    let stored = null;
+    try {
+      stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    } catch { stored = null; }
+
+    if (stored && stored.authenticatedRoom) {
+      if (String(stored.authenticatedRoom) !== String(selectedRoom)) {
+        // This device is bound to a different room — block immediately
+        setAuthState('unauthorized');
+        return;
+      }
+      // Token matches this room → grant access without re-verifying
+      setAuthState('granted');
+      return;
+    }
+
+    // ── Step 2: No token → fetch room status from backend ─────────────────
+    const fetchRoomStatus = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/room/${encodeURIComponent(selectedRoom)}`);
+        if (!res.ok) {
+          // Can't reach backend — allow access gracefully
+          setAuthState('granted');
+          return;
+        }
+        const data = await res.json();
+        const roomData = data?.data;
+        if (roomData && roomData.is_active) {
+          // Room is active → must verify phone
+          roomPhoneRef.current = roomData.guest_phone || null;
+          setAuthState('verify');
+        } else {
+          // Room not checked in yet
+          setAuthState('inactive');
+        }
+      } catch (err) {
+        console.error('Room status fetch error:', err);
+        // Network error — fail open (allow access)
+        setAuthState('granted');
+      }
+    };
+
+    fetchRoomStatus();
+  }, [hasRoomParam, selectedRoom]);
+
+  // ── PHONE VERIFICATION HANDLER ───────────────────────────────────────────
+  const handlePhoneVerify = async (e) => {
+    e.preventDefault();
+    const enteredPhone = verifyPhone.trim().replace(/\s+/g, '');
+    if (!enteredPhone) {
+      setVerifyError('Please enter your phone number.');
+      return;
+    }
+
+    setVerifyLoading(true);
+    setVerifyError('');
+
+    // Re-fetch room to get latest guest_phone (in case manager updated it)
+    let expectedPhone = roomPhoneRef.current;
+    try {
+      const res = await fetch(`${API_BASE_URL}/room/${encodeURIComponent(selectedRoom)}`);
+      if (res.ok) {
+        const data = await res.json();
+        expectedPhone = data?.data?.guest_phone || null;
+        roomPhoneRef.current = expectedPhone;
+      }
+    } catch { /* use cached value */ }
+
+    setVerifyLoading(false);
+
+    if (!expectedPhone) {
+      // No phone on file — contact front desk
+      setVerifyError('No phone number is registered for this suite. Please contact the front desk.');
+      return;
+    }
+
+    // Normalize: strip non-digits for comparison
+    const normalize = (n) => String(n || '').replace(/\D/g, '');
+    if (normalize(enteredPhone) === normalize(expectedPhone)) {
+      // ✅ Match — save token and grant access
+      const STORAGE_KEY = 'smartstay_auth';
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          authenticatedRoom: selectedRoom,
+          phone: enteredPhone,
+        }));
+      } catch { /* localStorage unavailable */ }
+      triggerToast('✅ Identity verified! Welcome to your suite portal.', 'success');
+      setAuthState('granted');
+    } else {
+      // ❌ No match
+      setVerifyError('Incorrect phone number. Please try again or contact the front desk.');
+    }
+  };
+
   const [customItem, setCustomItem] = useState('');
   const [loadingItem, setLoadingItem] = useState(null);
   const [myRequests, setMyRequests] = useState([]);
@@ -412,6 +532,7 @@ function GuestView({ roomFromUrl }) {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewHoverRating, setReviewHoverRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
+
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   // Voice Request State
@@ -975,6 +1096,190 @@ function GuestView({ roomFromUrl }) {
       </div>
     );
   }
+
+  // ── LOADING SCREEN ───────────────────────────────────────────────────────
+  if (authState === 'loading') {
+    return (
+      <div className="min-h-[65vh] flex flex-col items-center justify-center text-center space-y-5 animate-fade-in">
+        <div className="w-16 h-16 rounded-2xl bg-brand-surface border border-brand-border flex items-center justify-center shadow-stripe">
+          <RefreshCw className="w-7 h-7 animate-spin text-brand-primary" />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-sm font-semibold text-brand-heading">Verifying suite access…</p>
+          <p className="text-xs text-brand-body">Checking room status, please wait.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── DEVICE BINDING BLOCK ─────────────────────────────────────────────────
+  if (authState === 'unauthorized') {
+    const stored = (() => {
+      try { return JSON.parse(localStorage.getItem('smartstay_auth') || 'null'); } catch { return null; }
+    })();
+    return (
+      <div className="min-h-[65vh] flex flex-col items-center justify-center p-6 animate-fade-in">
+        <div className="max-w-md w-full bg-white border-2 border-red-200 rounded-3xl p-8 sm:p-10 shadow-2xl space-y-6 text-center">
+          {/* Icon */}
+          <div className="w-20 h-20 mx-auto rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center shadow-stripe">
+            <AlertTriangle className="w-10 h-10 text-red-500" />
+          </div>
+          {/* Badge */}
+          <span className="inline-block px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-50 text-red-600 border border-red-200">
+            🔒 Device Security Alert
+          </span>
+          {/* Heading */}
+          <div className="space-y-2">
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight leading-snug">
+              Unauthorized Access
+            </h1>
+            <p className="text-sm text-slate-600 leading-relaxed font-medium">
+              This device is already registered to{' '}
+              <span className="font-bold text-slate-800">
+                Suite {stored?.authenticatedRoom || 'another room'}
+              </span>.
+            </p>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              You cannot access{' '}
+              <span className="font-bold text-slate-800">Suite {selectedRoom}</span>{' '}
+              from this device.
+            </p>
+          </div>
+          {/* Error banner */}
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-left space-y-1">
+            <p className="text-xs font-bold text-red-700 uppercase tracking-wider flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5" /> Security Policy
+            </p>
+            <p className="text-xs text-red-600 leading-relaxed">
+              Each device may only be bound to one suite at a time. If you have changed rooms or are a new guest, please contact the Front Desk to reset your access token.
+            </p>
+          </div>
+          {/* Footer */}
+          <div className="pt-2 flex items-center justify-center space-x-2 text-xs text-slate-500 font-semibold">
+            <Crown className="w-4 h-4 text-brand-primary" />
+            <span>SmartStay Luxury Resort · Front Desk: Ext. 0</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ROOM NOT CHECKED IN ──────────────────────────────────────────────────
+  if (authState === 'inactive') {
+    return (
+      <div className="min-h-[65vh] flex flex-col items-center justify-center p-6 animate-fade-in">
+        <div className="max-w-md w-full bg-white border border-brand-border rounded-3xl p-8 sm:p-10 shadow-stripe space-y-6 text-center">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-brand-surface border border-brand-border flex items-center justify-center">
+            <ConciergeBell className="w-8 h-8 text-brand-primary" />
+          </div>
+          <div className="space-y-2">
+            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-brand-surface text-brand-body border border-brand-border">
+              Suite {selectedRoom}
+            </span>
+            <h1 className="text-xl font-bold text-brand-heading tracking-tight">
+              Suite Not Yet Active
+            </h1>
+            <p className="text-sm text-brand-body leading-relaxed">
+              This suite has not been checked in yet. Please visit the Front Desk to complete your check-in and activate your suite portal.
+            </p>
+          </div>
+          <div className="bg-brand-surface border border-brand-border rounded-xl p-4 text-xs text-brand-body font-medium">
+            🏨 Once the Front Desk activates your suite, you will be asked to verify your identity with the phone number provided at check-in.
+          </div>
+          <div className="flex items-center justify-center space-x-2 text-xs text-brand-body font-semibold">
+            <Crown className="w-4 h-4 text-brand-primary" />
+            <span>SmartStay Luxury Resort · Front Desk: Ext. 0</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── PHONE VERIFICATION SCREEN ────────────────────────────────────────────
+  if (authState === 'verify') {
+    return (
+      <div className="min-h-[65vh] flex flex-col items-center justify-center p-6 animate-fade-in">
+        <div className="max-w-md w-full bg-white border border-brand-border rounded-3xl shadow-2xl overflow-hidden">
+          {/* Header gradient band */}
+          <div className="bg-gradient-to-br from-slate-900 to-slate-700 p-8 text-center space-y-3">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm">
+              <PhoneCall className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <span className="inline-block px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-white/10 text-white/80 border border-white/20 mb-2">
+                Suite {selectedRoom} · Identity Check
+              </span>
+              <h1 className="text-2xl font-extrabold text-white tracking-tight">
+                Verify Your Identity
+              </h1>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                Enter the phone number you provided at the front desk to access your suite portal.
+              </p>
+            </div>
+          </div>
+
+          {/* Form body */}
+          <form onSubmit={handlePhoneVerify} className="p-8 space-y-5">
+            {/* Phone Input */}
+            <div className="space-y-2">
+              <label htmlFor="guest-phone-verify-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+                Guest Phone Number
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  id="guest-phone-verify-input"
+                  type="tel"
+                  value={verifyPhone}
+                  onChange={(e) => { setVerifyPhone(e.target.value); setVerifyError(''); }}
+                  placeholder="e.g. +91 98765 43210"
+                  autoFocus
+                  autoComplete="tel"
+                  className="w-full pl-10 pr-4 py-3.5 bg-brand-surface border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-xl focus:outline-none focus:border-slate-800 focus:bg-white transition-all font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Error message */}
+            {verifyError && (
+              <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl p-3.5 animate-fade-in">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-red-700 font-medium leading-relaxed">{verifyError}</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              id="verify-phone-submit-btn"
+              type="submit"
+              disabled={verifyLoading || !verifyPhone.trim()}
+              className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2.5 shadow-stripe cursor-pointer active:scale-[0.98]"
+            >
+              {verifyLoading ? (
+                <><RefreshCw className="w-4 h-4 animate-spin" /><span>Verifying…</span></>
+              ) : (
+                <><ShieldCheck className="w-4 h-4" /><span>Verify & Access Suite Portal</span></>
+              )}
+            </button>
+
+            {/* Help text */}
+            <p className="text-center text-xs text-brand-body leading-relaxed">
+              The phone number was registered by the Front Desk at check-in.{' '}
+              <span className="font-semibold text-brand-heading">Having trouble? Call Ext. 0.</span>
+            </p>
+          </form>
+
+          {/* Footer */}
+          <div className="px-8 pb-6 flex items-center justify-center space-x-2 text-xs text-brand-body font-medium">
+            <Lock className="w-3.5 h-3.5 text-brand-primary" />
+            <span>Secured by SmartStay Device Binding Technology</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MAIN PORTAL (authState === 'granted') ────────────────────────────────
 
   return (
     <>
@@ -2487,6 +2792,10 @@ function ManagerView() {
   // Single Mode State
   const [qrRoomNumber, setQrRoomNumber] = useState('101');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  // Check-In Guest modal state
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
+  const [checkinPhone, setCheckinPhone] = useState('');
+  const [checkinLoading, setCheckinLoading] = useState(false);
 
   // QR Generator Mode: 'single' | 'bulk'
   const [qrMode, setQrMode] = useState('single');
@@ -3178,9 +3487,10 @@ function ManagerView() {
     }, 300);
   };
 
-  // Checkout / Reset Room API call
+  // Check-Out / Reset Room API call
   const handleCheckoutRoom = async () => {
     const roomToCheckout = qrRoomNumber || '101';
+    if (!window.confirm(`Are you sure you want to check out Room ${roomToCheckout}? This will clear all active service requests and invalidate the guest's session.`)) return;
     setCheckoutLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/room/${encodeURIComponent(roomToCheckout)}/checkout`, {
@@ -3199,15 +3509,62 @@ function ManagerView() {
           },
           ...prev.slice(0, 49),
         ]);
+        triggerToast(`Room ${roomToCheckout} checked out successfully.`, 'success');
       } else {
         console.error(`Checkout API failed with status ${res.status}`);
+        triggerToast('Checkout failed. Please try again.', 'error');
       }
     } catch (err) {
       console.error('Checkout error:', err);
+      triggerToast('Checkout error: ' + err.message, 'error');
     } finally {
       setCheckoutLoading(false);
     }
   };
+
+  // Check-In Guest: saves phone number and activates room in Supabase
+  const handleCheckinRoom = async (e) => {
+    e.preventDefault();
+    const roomToCheckin = qrRoomNumber || '101';
+    const phone = checkinPhone.trim();
+    if (!phone) {
+      triggerToast('Please enter a guest phone number.', 'warning');
+      return;
+    }
+    setCheckinLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/room/${encodeURIComponent(roomToCheckin)}/checkin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guest_phone: phone }),
+      });
+      if (res.ok) {
+        triggerToast(`✅ Room ${roomToCheckin} checked in! Guest phone saved.`, 'success');
+        setActivityLogs((prev) => [
+          {
+            id: Date.now() + Math.random(),
+            type: 'CHECKIN',
+            timestamp: new Date().toLocaleTimeString(),
+            message: `Room ${roomToCheckin} checked in — guest phone registered`,
+            room: roomToCheckin,
+            status: 'Active',
+          },
+          ...prev.slice(0, 49),
+        ]);
+        setShowCheckinModal(false);
+        setCheckinPhone('');
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        triggerToast(errData?.detail || 'Check-in failed. Please try again.', 'error');
+      }
+    } catch (err) {
+      console.error('Check-in error:', err);
+      triggerToast('Check-in error: ' + err.message, 'error');
+    } finally {
+      setCheckinLoading(false);
+    }
+  };
+
 
   // Clear Completed Requests API call
   const handleClearCompleted = async () => {
@@ -3470,6 +3827,95 @@ function ManagerView() {
 
   return (
     <>
+      {/* ── CHECK-IN GUEST MODAL ─────────────────────────────────────────── */}
+      {showCheckinModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-all duration-300 animate-fade-in">
+          <div className="bg-white border border-slate-100 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-6 text-center relative">
+              <button
+                id="close-checkin-modal-btn"
+                onClick={() => setShowCheckinModal(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center">
+                <PhoneCall className="w-7 h-7 text-white" />
+              </div>
+              <span className="inline-block px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-white/10 text-white/80 border border-white/20 mb-2">
+                Front Desk · Check-In
+              </span>
+              <h3 className="text-xl font-extrabold text-white tracking-tight">
+                Check-In Guest — Suite {qrRoomNumber || '101'}
+              </h3>
+              <p className="text-xs text-emerald-100 mt-1 leading-relaxed">
+                Enter the guest's registered phone number. They will use this to verify their identity on the portal.
+              </p>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleCheckinRoom} className="p-6 sm:p-8 space-y-5">
+              {/* Phone Input */}
+              <div className="space-y-2">
+                <label htmlFor="checkin-phone-input" className="block text-xs font-bold uppercase tracking-wider text-brand-heading">
+                  Guest Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <input
+                    id="checkin-phone-input"
+                    type="tel"
+                    value={checkinPhone}
+                    onChange={(e) => setCheckinPhone(e.target.value)}
+                    placeholder="e.g. +91 98765 43210"
+                    required
+                    autoFocus
+                    autoComplete="tel"
+                    className="w-full pl-10 pr-4 py-3.5 bg-brand-surface border border-brand-border text-brand-heading placeholder-slate-400 text-sm rounded-xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all font-medium"
+                  />
+                </div>
+                <p className="text-[11px] text-brand-body leading-relaxed">
+                  This number will be used for OTP identity verification when the guest scans their room QR code. Digits-only comparison — spaces and dashes are ignored.
+                </p>
+              </div>
+
+              {/* Security notice */}
+              <div className="flex items-start gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-emerald-700 font-medium leading-relaxed">
+                  This activates Suite <strong>{qrRoomNumber || '101'}</strong> and binds it to the guest's phone. The portal will be locked until the guest enters this number.
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  id="cancel-checkin-modal-btn"
+                  onClick={() => setShowCheckinModal(false)}
+                  className="flex-1 px-5 py-3 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  id="confirm-checkin-btn"
+                  disabled={checkinLoading || !checkinPhone.trim()}
+                  className="flex-1 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-stripe cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {checkinLoading ? (
+                    <><RefreshCw className="w-3.5 h-3.5 animate-spin" /><span>Activating…</span></>
+                  ) : (
+                    <><LogIn className="w-3.5 h-3.5" /><span>Confirm Check-In</span></>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-10 animate-fade-in pb-28">
       {/* Header Banner */}
       <div ref={analyticsRef} className="scroll-mt-24 bg-brand-card border border-brand-border p-8 sm:p-10 rounded-2xl shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -3682,6 +4128,16 @@ function ManagerView() {
               </div>
 
               <div className="pt-2 flex flex-wrap gap-4">
+                {/* Check-In Guest Button */}
+                <button
+                  id="checkin-guest-btn"
+                  onClick={() => { setShowCheckinModal(true); setCheckinPhone(''); }}
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-all shadow-stripe flex items-center space-x-2 cursor-pointer active:scale-[0.98] border border-emerald-700"
+                >
+                  <LogIn className="w-4 h-4 text-white" />
+                  <span>Check-In Guest</span>
+                </button>
+
                 <button
                   id="qr-print-download-btn"
                   onClick={handlePrintQR}
